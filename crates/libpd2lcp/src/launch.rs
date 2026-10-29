@@ -8,13 +8,18 @@ pub async fn launch(state: Option<State>, settings: Settings) -> Result<(), Erro
     let game_path = state.pd2_dir().join("Game.exe");
     let args = settings.compose_args();
 
-    Command::new(state.wine_exe("wine")?)
-        .env("WINEPREFIX", state.wine_prefix()?)
+    let mut cmd = Command::new(state.wine_exe("wine")?);
+
+    cmd.env("WINEPREFIX", state.wine_prefix()?)
         .current_dir(state.pd2_dir())
         .arg(game_path)
-        .args(args)
-        .status()
-        .await?;
+        .args(args);
+
+    if settings.force_x11 {
+        cmd.env_remove("WAYLAND_DISPLAY");
+    }
+
+    cmd.status().await?;
 
     Ok(())
 }

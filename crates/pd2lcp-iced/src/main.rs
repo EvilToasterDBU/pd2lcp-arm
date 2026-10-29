@@ -395,7 +395,7 @@ fn page<'a>(content: impl Into<Element<'a, Message>>) -> Element<'a, Message> {
         container(content)
             .padding(space::XL)
             .max_width(420.0)
-            .max_height(500.0)
+            .max_height(600.0)
             .style(card_style),
     )
     .width(Fill)
@@ -519,6 +519,7 @@ enum Message {
     GraphicsMode(GraphicsMode),
     SoundCheckbox(bool),
     BnetCheckbox(bool),
+    ForceX11Checkbox(bool),
     UpdatesCheckbox(bool),
     ScaleSlider(f32),
 
@@ -701,6 +702,7 @@ fn update(state: &mut Launcher, message: Message) -> Task<Message> {
         Message::SoundCheckbox(b) => state.new_settings.sndbkg = b,
         Message::BnetCheckbox(b) => state.new_settings.skiptobnet = b,
         Message::UpdatesCheckbox(b) => state.new_settings.no_updates = b,
+        Message::ForceX11Checkbox(b) => state.new_settings.force_x11 = b,
         Message::ScaleSlider(scale) => state.new_settings.scale_factor = scale / 100.0,
         Message::ApplyButton => {
             state.settings = state.new_settings.clone();
@@ -1130,6 +1132,11 @@ fn settings_screen(state: &Launcher) -> Element<'_, Message> {
                     .label("Disable updates")
                     .style(checkbox_style)
                     .on_toggle(Message::UpdatesCheckbox),
+                Space::new().height(space::XS),
+                checkbox(state.new_settings.force_x11)
+                    .label("Force X11")
+                    .style(checkbox_style)
+                    .on_toggle(Message::ForceX11Checkbox),
             ]
         ),
         Space::new().height(space::LG),

@@ -18,6 +18,9 @@ pub struct Settings {
     pub sndbkg: bool,
     pub no_updates: bool,
 
+    // Force x11
+    pub force_x11: bool,
+
     // Launcher
     pub scale_factor: f32,
 
@@ -34,6 +37,9 @@ pub struct SettingsSerialisable {
     skiptobnet: bool,
     sndbkg: bool,
     no_updates: bool,
+
+    // Force x11
+    pub force_x11: bool,
 
     // Launcher
     scale_factor: f32,
@@ -56,6 +62,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             graphics_mode: GraphicsMode::_3DFX,
+            force_x11: false,
             skiptobnet: true,
             sndbkg: false,
             no_updates: false,
@@ -72,6 +79,7 @@ impl From<SettingsSerialisable> for Settings {
             graphics_mode: value.graphics_mode,
             skiptobnet: value.skiptobnet,
             sndbkg: value.sndbkg,
+            force_x11: value.force_x11,
             no_updates: value.no_updates,
             scale_factor: value.scale_factor,
             active_filter: value.active_filter,
@@ -86,6 +94,7 @@ impl From<Settings> for SettingsSerialisable {
             graphics_mode: value.graphics_mode,
             skiptobnet: value.skiptobnet,
             sndbkg: value.sndbkg,
+            force_x11: value.force_x11,
             no_updates: value.no_updates,
             scale_factor: value.scale_factor,
             active_filter: value.active_filter,
