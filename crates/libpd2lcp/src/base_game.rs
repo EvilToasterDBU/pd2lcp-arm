@@ -1,4 +1,6 @@
-use std::path::PathBuf;
+#[cfg(target_os = "linux")]
+use std::path::Path;
+use std::{path::PathBuf, process::Output};
 
 #[cfg(target_os = "windows")]
 use tokio::process::Command;
@@ -9,36 +11,64 @@ use crate::{error::Error, state::State};
 pub async fn install_d2(state: Option<State>, d2_installer: PathBuf) -> Result<(), Error> {
     let state = state.ok_or(Error::Pd2lcpNotInitialised)?;
 
-    let status_d2 = state
+    let output_d2 = state
         .wine_command("wine")?
         .env("WINEPREFIX", state.wine_prefix()?)
-        .arg(d2_installer)
-        .status()
+        .arg(&d2_installer)
+        .output()
         .await?;
 
-    if !status_d2.success() {
-        return Err(Error::FailedToInstallD2);
-    }
-
-    Ok(())
+    handle_installer_output(&state, "D2", &d2_installer, output_d2).await
 }
 
 #[cfg(target_os = "linux")]
 pub async fn install_d2_lod(state: Option<State>, d2_lod_installer: PathBuf) -> Result<(), Error> {
     let state = state.ok_or(Error::Pd2lcpNotInitialised)?;
 
-    let status_d2_lod = state
+    let output_d2_lod = state
         .wine_command("wine")?
         .env("WINEPREFIX", state.wine_prefix()?)
-        .arg(d2_lod_installer)
-        .status()
+        .arg(&d2_lod_installer)
+        .output()
         .await?;
 
-    if !status_d2_lod.success() {
-        return Err(Error::FailedToInstallD2LOD);
+    handle_installer_output(&state, "D2 LOD", &d2_lod_installer, output_d2_lod).await
+}
+
+#[cfg(target_os = "linux")]
+async fn handle_installer_output(
+    state: &State,
+    game: &str,
+    installer_path: &Path,
+    output: Output,
+) -> Result<(), Error> {
+    if output.status.success() {
+        return Ok(());
     }
 
-    Ok(())
+    let status = output
+        .status
+        .code()
+        .map(|code| format!("exit code {code}"))
+        .unwrap_or_else(|| "terminated by a signal".to_string());
+    let log_path = state.base().join(if game == "D2" {
+        "install_d2.log"
+    } else {
+        "install_d2_lod.log"
+    });
+    let log_contents = format!(
+        "Game: {game}\nInstaller: {}\nWine status: {status}\n\n--- stdout ---\n{}\n--- stderr ---\n{}",
+        installer_path.display(),
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    tokio::fs::write(&log_path, log_contents).await?;
+
+    Err(Error::InstallerProcessFailed {
+        game: game.to_string(),
+        status,
+        log_path,
+    })
 }
 
 #[cfg(target_os = "windows")]

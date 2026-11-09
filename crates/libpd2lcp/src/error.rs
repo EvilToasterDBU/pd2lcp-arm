@@ -1,4 +1,4 @@
-use std::sync::PoisonError;
+use std::{path::PathBuf, sync::PoisonError};
 
 use thiserror::Error;
 
@@ -55,6 +55,12 @@ pub enum Error {
     FailedToInstallD2,
     #[error("Failed to install d2 lod")]
     FailedToInstallD2LOD,
+    #[error("{game} installer failed ({status}). Wine output saved to {log_path}")]
+    InstallerProcessFailed {
+        game: String,
+        status: String,
+        log_path: PathBuf,
+    },
     #[error("Unable to untar the archive. Is tar installed?")]
     FailedToUntarArchive,
     #[error("This operation does not exist on this platform")]
