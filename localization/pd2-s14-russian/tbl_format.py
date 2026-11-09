@@ -56,14 +56,15 @@ def crc16(data: bytes)->int:
     return crc
 
 
-def write_tbl(path: str|Path, rows: Iterable[tuple[str,str]])->None:
+def write_tbl_rows(path: str|Path, rows: Iterable[tuple[str,str]], *, allow_duplicate_keys: bool=False)->None:
     rows=list(rows)
     if not rows or len(rows)>65535:
         raise ValueError('invalid row count')
-    seen=set()
     normalized=[]
+    seen=set()
     for key,val in rows:
-        if key in seen: raise ValueError(f'duplicate key {key}')
+        if not allow_duplicate_keys and key in seen:
+            raise ValueError(f'duplicate key {key}')
         seen.add(key)
         normalized.append((key.encode('cp1252'),val.encode('utf-8')))
     n=len(normalized)
@@ -94,6 +95,11 @@ def write_tbl(path: str|Path, rows: Iterable[tuple[str,str]])->None:
     header=HEADER.pack(crc16(bytes(table[data_start:])),n,n,1,data_start,collision_count+1,file_size)
     table[:HEADER.size]=header
     Path(path).write_bytes(table)
+
+
+def write_tbl(path: str|Path, rows: Iterable[tuple[str,str]])->None:
+    """Write a table with unique keys."""
+    write_tbl_rows(path, rows)
 
 if __name__=='__main__':
     import sys
