@@ -59,6 +59,6 @@ Android is a bit more involved, since you're in an externally managed Wine envir
 - **Keyboard:** arrow keys move the focus, Enter or Space activates, Escape goes back, and Tab moves through controls.
 
 ## Russian localization
-Download `pd2-russian-s14-hd.zip` from the [latest release](https://github.com/EvilToasterDBU/pd2lcp-arm/releases/latest), close the game, and extract the archive into the `ProjectD2` game folder. The archive contains the Russian S14 strings and the D2GL files required for Russian HD menu labels. Back up any existing `glide3x.dll`, `ddraw.dll`, and `data/local` files before replacing them.
+Download `pd2-russian-s14-hd.zip` from the [latest release](https://github.com/EvilToasterDBU/pd2lcp-arm/releases/latest), close the game, and extract the archive into the `ProjectD2` game folder. It contains the full `data` localization folder copied from the working console install (Russian game and PD2 tables, UI resources, Cyrillic fonts, controls, and voice files), plus the S14 translation and D2GL files for HD menu labels. Back up any existing `data`, `glide3x.dll`, and `ddraw.dll` before replacing them.
 
 Then enable **Russian language** in the launcher's settings. The launcher adds `-direct` when starting the game. This pack works with both the x86_64 build, which runs native Wine without Box64, and the ARM64 build, which uses Box64.
