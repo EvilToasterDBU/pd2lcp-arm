@@ -8,6 +8,7 @@ on:
 
 jobs:
   build-x86_64:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     permissions:
