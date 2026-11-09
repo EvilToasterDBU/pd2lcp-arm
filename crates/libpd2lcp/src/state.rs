@@ -194,7 +194,7 @@ impl State {
     #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
     fn box64_exe(&self) -> PathBuf {
         if let Some(app_dir) = std::env::var_os("APPDIR") {
-            let bundled = PathBuf::from(app_dir).join("box64");
+            let bundled = PathBuf::from(app_dir).join("box64/box64");
             if bundled.is_file() {
                 return bundled;
             }
@@ -206,7 +206,7 @@ impl State {
                 .and_then(Path::parent)
                 .and_then(Path::parent)
             {
-                let bundled = app_dir.join("box64");
+                let bundled = app_dir.join("box64/box64");
                 if bundled.is_file() {
                     return bundled;
                 }
