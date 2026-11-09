@@ -173,11 +173,21 @@ impl State {
         #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
         {
             let wine_dir = self.wine_dir()?;
-            let mut command = Command::new(self.box64_exe());
+            let box64_exe = self.box64_exe();
+            let box64_libs = box64_exe
+                .parent()
+                .map(|path| path.join("usr/lib/box64-x86_64-linux-gnu"));
+            let library_path = box64_libs
+                .filter(|path| path.is_dir())
+                .map(|path| format!("{}:", path.display()))
+                .unwrap_or_default();
+
+            let mut command = Command::new(box64_exe);
             command.arg(wine_exe).env(
                 "BOX64_LD_LIBRARY_PATH",
                 format!(
-                    "{}:{}",
+                    "{}{}:{}",
+                    library_path,
                     wine_dir.join("lib64").display(),
                     wine_dir.join("lib").display()
                 ),
