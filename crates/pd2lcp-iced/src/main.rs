@@ -6,13 +6,16 @@ use std::{
     sync::LazyLock,
 };
 
+#[cfg(target_os = "linux")]
+use std::time::{Duration, Instant};
+
 use color_eyre::eyre::Result;
 use iced::{
     Alignment, Border, Color, Element,
     Length::{self, Fill},
     Subscription, Task, Theme,
     futures::{SinkExt, Stream},
-    stream,
+    keyboard, stream,
     widget::{
         Column, Space, button, checkbox, column as col, container, pick_list, progress_bar, row,
         scrollable, slider, svg::Handle, text,
@@ -32,6 +35,9 @@ use libpd2lcp::{
     settings::{GraphicsMode, Settings},
     state::State,
 };
+
+#[cfg(target_os = "linux")]
+use gilrs::{Axis as GamepadAxis, Button as GamepadButton, EventType as GamepadEventType, Gilrs};
 
 const ICON: &[u8] = include_bytes!("../../../icon.svg");
 
@@ -447,6 +453,9 @@ struct Launcher {
 
     // Reset confirm
     confirm: bool,
+
+    // Controller and keyboard navigation
+    focus_index: usize,
 }
 
 impl Launcher {
@@ -482,6 +491,8 @@ impl Launcher {
             disallow_filter_group_switching: false,
 
             confirm: false,
+
+            focus_index: 0,
         }
     }
 }
@@ -558,10 +569,195 @@ enum Message {
     ReturnButton,
     DownloadButton,
     RemoveButton,
+
+    // Keyboard/gamepad navigation
+    Navigate(Navigation),
+}
+
+#[derive(Clone, Copy, Debug)]
+enum Navigation {
+    Previous,
+    Next,
+    Left,
+    Right,
+    Activate,
+    Back,
+}
+
+fn navigation_item_count(state: &Launcher) -> usize {
+    match state.gui_state {
+        GuiState::Init | GuiState::Error(_) => 1,
+        GuiState::InstallD2 | GuiState::InstallLOD => 1 + usize::from(state.allow_next),
+        GuiState::Main => 4,
+        GuiState::Settings => 9,
+        GuiState::Filters => {
+            4 + state.filter_authors.as_ref().map_or(0, Vec::len)
+                + state.filters.as_ref().map_or(0, Vec::len)
+        }
+    }
+}
+
+fn navigation_message(state: &Launcher) -> Option<Message> {
+    let index = state.focus_index;
+
+    match state.gui_state {
+        GuiState::Init => Some(Message::InitButton),
+        GuiState::InstallD2 => match index {
+            0 => Some(Message::FilePickerButtonD2),
+            1 if state.allow_next => Some(Message::NextButton),
+            _ => None,
+        },
+        GuiState::InstallLOD => match index {
+            0 => Some(Message::FilePickerButtonLOD),
+            1 if state.allow_next => Some(Message::NextButton),
+            _ => None,
+        },
+        GuiState::Main => match index {
+            0 => Some(Message::FilterButton),
+            1 => Some(Message::SettingsButton),
+            2 => Some(Message::ExitButton),
+            3 => Some(Message::LaunchButton),
+            _ => None,
+        },
+        GuiState::Error(_) => Some(Message::ErrorReturnButton),
+        GuiState::Settings => match index {
+            0 => Some(Message::ReturnButton),
+            1 => Some(Message::GraphicsMode(
+                match state.new_settings.graphics_mode {
+                    GraphicsMode::DDRAW => GraphicsMode::_3DFX,
+                    GraphicsMode::_3DFX => GraphicsMode::DDRAW,
+                },
+            )),
+            2 => Some(Message::SoundCheckbox(!state.new_settings.sndbkg)),
+            3 => Some(Message::BnetCheckbox(!state.new_settings.skiptobnet)),
+            4 => Some(Message::UpdatesCheckbox(!state.new_settings.no_updates)),
+            5 => Some(Message::ForceX11Checkbox(!state.new_settings.force_x11)),
+            6 => None,
+            7 => Some(Message::ResetButton),
+            8 if state.settings != state.new_settings => Some(Message::ApplyButton),
+            _ => None,
+        },
+        GuiState::Filters => {
+            if index == 0 {
+                return Some(Message::ReturnButton);
+            }
+
+            let author_count = state.filter_authors.as_ref().map_or(0, Vec::len);
+            if index <= author_count {
+                return state
+                    .filter_authors
+                    .as_ref()
+                    .and_then(|authors| authors.get(index - 1))
+                    .cloned()
+                    .map(Message::FilterAuthorSelected);
+            }
+
+            let filter_index = index - 1 - author_count;
+            let filter_count = state.filters.as_ref().map_or(0, Vec::len);
+            if filter_index < filter_count {
+                return state
+                    .filters
+                    .as_ref()
+                    .and_then(|filters| filters.get(filter_index))
+                    .cloned()
+                    .map(Message::FilterSelected);
+            }
+
+            match index - (1 + author_count + filter_count) {
+                0 => Some(Message::ActivateButton),
+                1 => Some(Message::DownloadButton),
+                2 => Some(Message::RemoveButton),
+                _ => None,
+            }
+        }
+    }
+}
+
+fn navigation_target<'a>(
+    content: impl Into<Element<'a, Message>>,
+    focused: bool,
+) -> Element<'a, Message> {
+    let content = content.into();
+
+    if focused {
+        container(content)
+            .style(|_| container::Style {
+                background: Some(Color::TRANSPARENT.into()),
+                border: Border {
+                    color: palette::ACCENT,
+                    width: 2.0,
+                    radius: 9.0.into(),
+                },
+                ..Default::default()
+            })
+            .into()
+    } else {
+        content
+    }
 }
 
 fn update(state: &mut Launcher, message: Message) -> Task<Message> {
     match message {
+        Message::Navigate(navigation) => match navigation {
+            Navigation::Previous | Navigation::Next => {
+                let count = navigation_item_count(state).max(1);
+                state.focus_index = match navigation {
+                    Navigation::Previous => (state.focus_index + count - 1) % count,
+                    _ => (state.focus_index + 1) % count,
+                };
+            }
+            Navigation::Left | Navigation::Right => match state.gui_state {
+                GuiState::Settings if state.focus_index == 1 => {
+                    state.new_settings.graphics_mode = match state.new_settings.graphics_mode {
+                        GraphicsMode::DDRAW => GraphicsMode::_3DFX,
+                        GraphicsMode::_3DFX => GraphicsMode::DDRAW,
+                    };
+                }
+                GuiState::Settings if (2..=5).contains(&state.focus_index) => {
+                    let value = matches!(navigation, Navigation::Right);
+                    match state.focus_index {
+                        2 => state.new_settings.sndbkg = value,
+                        3 => state.new_settings.skiptobnet = value,
+                        4 => state.new_settings.no_updates = value,
+                        5 => state.new_settings.force_x11 = value,
+                        _ => (),
+                    }
+                }
+                GuiState::Settings if state.focus_index == 6 => {
+                    let delta = if matches!(navigation, Navigation::Right) {
+                        0.05
+                    } else {
+                        -0.05
+                    };
+                    state.new_settings.scale_factor =
+                        (state.new_settings.scale_factor + delta).clamp(0.75, 2.0);
+                }
+                _ => {
+                    let count = navigation_item_count(state).max(1);
+                    state.focus_index = if matches!(navigation, Navigation::Left) {
+                        (state.focus_index + count - 1) % count
+                    } else {
+                        (state.focus_index + 1) % count
+                    };
+                }
+            },
+            Navigation::Activate => {
+                if let Some(message) = navigation_message(state) {
+                    return update(state, message);
+                }
+            }
+            Navigation::Back => match state.gui_state {
+                GuiState::Settings | GuiState::Filters => {
+                    return update(state, Message::ReturnButton);
+                }
+                GuiState::Error(_) => return update(state, Message::ErrorReturnButton),
+                GuiState::InstallLOD => {
+                    state.gui_state = GuiState::InstallD2;
+                    state.focus_index = 0;
+                }
+                GuiState::Init | GuiState::InstallD2 | GuiState::Main => (),
+            },
+        },
         Message::ResetButton => 'rst: {
             if !state.confirm {
                 state.confirm = true;
@@ -613,7 +809,10 @@ fn update(state: &mut Launcher, message: Message) -> Task<Message> {
         Message::NextButton => {
             state.allow_next = false;
             match state.gui_state {
-                GuiState::InstallD2 => state.gui_state = GuiState::InstallLOD,
+                GuiState::InstallD2 => {
+                    state.gui_state = GuiState::InstallLOD;
+                    state.focus_index = 0;
+                }
                 GuiState::InstallLOD => {
                     return Task::perform(relocate_files(state.game_state.clone()), |r| {
                         Message::RelocateFilesTask(r.map_err(|e| e.to_string()))
@@ -625,6 +824,7 @@ fn update(state: &mut Launcher, message: Message) -> Task<Message> {
         Message::RelocateFilesTask(res) => match res {
             Ok(_) => {
                 state.gui_state = GuiState::Main;
+                state.focus_index = 0;
 
                 if let Some(ref game_state) = state.game_state {
                     if let Err(e) = File::create(game_state.base().join("setup_finished")) {
@@ -681,6 +881,7 @@ fn update(state: &mut Launcher, message: Message) -> Task<Message> {
             let _ = handle_fallible(state, res, |state, game_state| {
                 state.game_state = Some(game_state);
                 state.gui_state = GuiState::InstallD2;
+                state.focus_index = 0;
 
                 None
             });
@@ -690,6 +891,7 @@ fn update(state: &mut Launcher, message: Message) -> Task<Message> {
             state.confirm = false;
             state.reset_button_label = "Reset Installation";
             state.gui_state = GuiState::Settings;
+            state.focus_index = 0;
         }
         Message::ExitButton => {
             return iced::exit();
@@ -697,6 +899,7 @@ fn update(state: &mut Launcher, message: Message) -> Task<Message> {
         Message::ReturnButton => {
             state.new_settings = state.settings.clone();
             state.gui_state = GuiState::Main;
+            state.focus_index = 0;
         }
         Message::GraphicsMode(new) => state.new_settings.graphics_mode = new,
         Message::SoundCheckbox(b) => state.new_settings.sndbkg = b,
@@ -715,6 +918,7 @@ fn update(state: &mut Launcher, message: Message) -> Task<Message> {
         Message::ErrorReturnButton => {
             if let Some(prev) = state.error_prev_screen.take() {
                 state.gui_state = prev;
+                state.focus_index = 0;
             } else {
                 display_error(state, "This shouldn't happen. Report it".to_string());
             }
@@ -828,6 +1032,7 @@ fn update(state: &mut Launcher, message: Message) -> Task<Message> {
             state.selected_filter = None;
             state.selected_author = None;
             state.gui_state = GuiState::Filters;
+            state.focus_index = 0;
 
             return Task::perform(get_filter_authors(), |r| {
                 Message::FetchAuthorsTask(r.map_err(|e| e.to_string()))
@@ -926,7 +1131,7 @@ fn view(state: &Launcher) -> Element<'_, Message> {
         GuiState::InstallLOD => install_d2_lod_screen(state),
         GuiState::Main => main_screen(state),
         GuiState::Settings => settings_screen(state),
-        GuiState::Error(ref e) => error_screen(e),
+        GuiState::Error(ref e) => error_screen(e, state.focus_index == 0),
         GuiState::Filters => filters_screen(state),
     }
 }
@@ -938,15 +1143,18 @@ fn init_screen(state: &Launcher) -> Element<'_, Message> {
             .size(14)
             .color(palette::TEXT_SECONDARY),
         Space::new().height(space::MD),
-        button(text("Get Started").center())
-            .on_press_maybe(if !state.disable_get_started {
-                Some(Message::InitButton)
-            } else {
-                None
-            })
-            .width(Fill)
-            .padding(space::MD)
-            .style(primary_button_style)
+        navigation_target(
+            button(text("Get Started").center())
+                .on_press_maybe(if !state.disable_get_started {
+                    Some(Message::InitButton)
+                } else {
+                    None
+                })
+                .width(Fill)
+                .padding(space::MD)
+                .style(primary_button_style),
+            state.focus_index == 0,
+        )
     ]
     .spacing(space::SM)
     .width(Fill);
@@ -962,21 +1170,27 @@ fn install_d2_screen(state: &Launcher) -> Element<'_, Message> {
             .size(14)
             .color(palette::TEXT_SECONDARY),
         Space::new().height(space::LG),
-        button(text("Select D2 Installer").center())
-            .on_press(Message::FilePickerButtonD2)
-            .width(Fill)
-            .padding(space::MD)
-            .style(secondary_button_style),
+        navigation_target(
+            button(text("Select D2 Installer").center())
+                .on_press(Message::FilePickerButtonD2)
+                .width(Fill)
+                .padding(space::MD)
+                .style(secondary_button_style),
+            state.focus_index == 0,
+        ),
         Space::new().height(space::SM),
-        button(text("Next").center())
-            .on_press_maybe(if state.allow_next {
-                Some(Message::NextButton)
-            } else {
-                None
-            })
-            .width(Fill)
-            .padding(space::MD)
-            .style(primary_button_style)
+        navigation_target(
+            button(text("Next").center())
+                .on_press_maybe(if state.allow_next {
+                    Some(Message::NextButton)
+                } else {
+                    None
+                })
+                .width(Fill)
+                .padding(space::MD)
+                .style(primary_button_style),
+            state.focus_index == 1 && state.allow_next,
+        )
     ]
     .spacing(space::SM)
     .width(Fill);
@@ -994,21 +1208,27 @@ fn install_d2_lod_screen(state: &Launcher) -> Element<'_, Message> {
             .size(14)
             .color(palette::TEXT_SECONDARY),
         Space::new().height(space::LG),
-        button(text("Select D2 LOD Installer").center())
-            .on_press(Message::FilePickerButtonLOD)
-            .width(Fill)
-            .padding(space::MD)
-            .style(secondary_button_style),
+        navigation_target(
+            button(text("Select D2 LOD Installer").center())
+                .on_press(Message::FilePickerButtonLOD)
+                .width(Fill)
+                .padding(space::MD)
+                .style(secondary_button_style),
+            state.focus_index == 0,
+        ),
         Space::new().height(space::SM),
-        button(text("Next").center())
-            .on_press_maybe(if state.allow_next {
-                Some(Message::NextButton)
-            } else {
-                None
-            })
-            .width(Fill)
-            .padding(space::MD)
-            .style(primary_button_style)
+        navigation_target(
+            button(text("Next").center())
+                .on_press_maybe(if state.allow_next {
+                    Some(Message::NextButton)
+                } else {
+                    None
+                })
+                .width(Fill)
+                .padding(space::MD)
+                .style(primary_button_style),
+            state.focus_index == 1 && state.allow_next,
+        )
     ]
     .spacing(space::SM)
     .width(Fill);
@@ -1023,20 +1243,29 @@ fn main_screen(state: &Launcher) -> Element<'_, Message> {
             .width(Length::Fixed(40.0)),
         Space::new().width(space::LG),
         text("PD2LCP").size(20).color(palette::TEXT).width(Fill),
-        button(text("Filters").size(13))
-            .on_press(Message::FilterButton)
-            .padding([space::XS, space::SM])
-            .style(secondary_button_style),
+        navigation_target(
+            button(text("Filters").size(13))
+                .on_press(Message::FilterButton)
+                .padding([10.0, 12.0])
+                .style(secondary_button_style),
+            state.focus_index == 0,
+        ),
         Space::new().width(space::MD),
-        button(text("Settings").size(13))
-            .on_press(Message::SettingsButton)
-            .padding([space::XS, space::SM])
-            .style(secondary_button_style),
+        navigation_target(
+            button(text("Settings").size(13))
+                .on_press(Message::SettingsButton)
+                .padding([10.0, 12.0])
+                .style(secondary_button_style),
+            state.focus_index == 1,
+        ),
         Space::new().width(space::MD),
-        button(text("Exit").size(13))
-            .on_press(Message::ExitButton)
-            .padding([space::XS, space::SM])
-            .style(secondary_button_style)
+        navigation_target(
+            button(text("Exit").size(13))
+                .on_press(Message::ExitButton)
+                .padding([10.0, 12.0])
+                .style(secondary_button_style),
+            state.focus_index == 2,
+        )
     ]
     .align_y(iced::Alignment::Center);
 
@@ -1044,7 +1273,7 @@ fn main_screen(state: &Launcher) -> Element<'_, Message> {
         .spacing(space::SM)
         .width(Fill);
 
-    content = content.push(
+    content = content.push(navigation_target(
         button(text(state.launch_button_label).center())
             .on_press_maybe(if !state.launch_button_disabled {
                 Some(Message::LaunchButton)
@@ -1054,7 +1283,8 @@ fn main_screen(state: &Launcher) -> Element<'_, Message> {
             .width(Fill)
             .padding(space::MD)
             .style(primary_button_style),
-    );
+        state.focus_index == 3,
+    ));
 
     if let Some((done, total)) = state.installing_progress {
         content = content.push(Space::new().height(space::MD));
@@ -1090,10 +1320,13 @@ fn settings_screen(state: &Launcher) -> Element<'_, Message> {
     let content = col![
         row![
             text("Settings").size(20).color(palette::TEXT).width(Fill),
-            button(text("Back").size(13))
-                .on_press(Message::ReturnButton)
-                .padding([space::XS, space::SM])
-                .style(secondary_button_style),
+            navigation_target(
+                button(text("Back").size(13))
+                    .on_press(Message::ReturnButton)
+                    .padding([10.0, 12.0])
+                    .style(secondary_button_style),
+                state.focus_index == 0,
+            ),
         ]
         .align_y(iced::Alignment::Center),
         Space::new().height(space::XS),
@@ -1102,41 +1335,56 @@ fn settings_screen(state: &Launcher) -> Element<'_, Message> {
             row![
                 text("Renderer"),
                 Space::new().width(space::SM),
-                pick_list(
-                    renderers,
-                    Some(state.new_settings.graphics_mode),
-                    Message::GraphicsMode
+                navigation_target(
+                    pick_list(
+                        renderers,
+                        Some(state.new_settings.graphics_mode),
+                        Message::GraphicsMode
+                    )
+                    .style(pick_list_style),
+                    state.focus_index == 1,
                 )
-                .style(pick_list_style)
             ]
             .align_y(Alignment::Center)
         ),
         Space::new().height(space::MD),
         settings_section(
             "Sound",
-            checkbox(state.new_settings.sndbkg)
-                .label("Sound in background")
-                .style(checkbox_style)
-                .on_toggle(Message::SoundCheckbox)
+            navigation_target(
+                checkbox(state.new_settings.sndbkg)
+                    .label("Sound in background")
+                    .style(checkbox_style)
+                    .on_toggle(Message::SoundCheckbox),
+                state.focus_index == 2,
+            )
         ),
         Space::new().height(space::LG),
         settings_section(
             "Misc",
             col![
-                checkbox(state.new_settings.skiptobnet)
-                    .label("Skip to battlenet")
-                    .style(checkbox_style)
-                    .on_toggle(Message::BnetCheckbox),
+                navigation_target(
+                    checkbox(state.new_settings.skiptobnet)
+                        .label("Skip to battlenet")
+                        .style(checkbox_style)
+                        .on_toggle(Message::BnetCheckbox),
+                    state.focus_index == 3,
+                ),
                 Space::new().height(space::XS),
-                checkbox(state.new_settings.no_updates)
-                    .label("Disable updates")
-                    .style(checkbox_style)
-                    .on_toggle(Message::UpdatesCheckbox),
+                navigation_target(
+                    checkbox(state.new_settings.no_updates)
+                        .label("Disable updates")
+                        .style(checkbox_style)
+                        .on_toggle(Message::UpdatesCheckbox),
+                    state.focus_index == 4,
+                ),
                 Space::new().height(space::XS),
-                checkbox(state.new_settings.force_x11)
-                    .label("Force X11")
-                    .style(checkbox_style)
-                    .on_toggle(Message::ForceX11Checkbox),
+                navigation_target(
+                    checkbox(state.new_settings.force_x11)
+                        .label("Force X11")
+                        .style(checkbox_style)
+                        .on_toggle(Message::ForceX11Checkbox),
+                    state.focus_index == 5,
+                ),
             ]
         ),
         Space::new().height(space::LG),
@@ -1150,36 +1398,45 @@ fn settings_screen(state: &Launcher) -> Element<'_, Message> {
                 ]
                 .align_y(iced::Alignment::Center),
                 Space::new().width(space::LG),
-                slider(
-                    75.0..=200.0,
-                    state.new_settings.scale_factor * 100.0,
-                    Message::ScaleSlider
+                navigation_target(
+                    slider(
+                        75.0..=200.0,
+                        state.new_settings.scale_factor * 100.0,
+                        Message::ScaleSlider
+                    )
+                    .style(slider_style),
+                    state.focus_index == 6,
                 )
-                .style(slider_style)
             ]
         ),
         Space::new().height(space::XS),
         row![
-            container(
-                button(state.reset_button_label)
-                    .style(if state.confirm {
-                        danger_button_style
-                    } else {
-                        secondary_button_style
-                    })
-                    .on_press(Message::ResetButton)
+            navigation_target(
+                container(
+                    button(state.reset_button_label)
+                        .style(if state.confirm {
+                            danger_button_style
+                        } else {
+                            secondary_button_style
+                        })
+                        .on_press(Message::ResetButton),
+                )
+                .align_left(Fill),
+                state.focus_index == 7,
+            ),
+            navigation_target(
+                container(
+                    button(text("Apply").size(13))
+                        .style(primary_button_style)
+                        .on_press_maybe(if state.settings != state.new_settings {
+                            Some(Message::ApplyButton)
+                        } else {
+                            None
+                        }),
+                )
+                .align_right(Fill),
+                state.focus_index == 8,
             )
-            .align_left(Fill),
-            container(
-                button(text("Apply").size(13))
-                    .style(primary_button_style)
-                    .on_press_maybe(if state.settings != state.new_settings {
-                        Some(Message::ApplyButton)
-                    } else {
-                        None
-                    })
-            )
-            .align_right(Fill)
         ]
     ]
     .spacing(space::SM)
@@ -1188,16 +1445,19 @@ fn settings_screen(state: &Launcher) -> Element<'_, Message> {
     page(content)
 }
 
-fn error_screen(message: &str) -> Element<'_, Message> {
+fn error_screen(message: &str, return_focused: bool) -> Element<'_, Message> {
     let content = col![
         text("Something went wrong").size(20).color(palette::ERROR),
         text(message).size(14).color(palette::TEXT_SECONDARY),
         Space::new().height(space::LG),
-        button(text("Return").center())
-            .on_press(Message::ErrorReturnButton)
-            .width(Fill)
-            .padding(space::MD)
-            .style(primary_button_style),
+        navigation_target(
+            button(text("Return").center())
+                .on_press(Message::ErrorReturnButton)
+                .width(Fill)
+                .padding(space::MD)
+                .style(primary_button_style),
+            return_focused,
+        ),
     ]
     .spacing(space::SM)
     .width(Fill);
@@ -1218,9 +1478,13 @@ fn error_screen(message: &str) -> Element<'_, Message> {
 fn filters_screen(state: &Launcher) -> Element<'_, Message> {
     let header = row![
         text("Filters").size(20).color(palette::TEXT).width(Fill),
-        button(text("Return").size(13))
-            .on_press(Message::ReturnButton)
-            .style(secondary_button_style)
+        navigation_target(
+            button(text("Return").size(13))
+                .on_press(Message::ReturnButton)
+                .padding([10.0, 12.0])
+                .style(secondary_button_style),
+            state.focus_index == 0,
+        )
     ];
 
     let mut selections = row![];
@@ -1229,20 +1493,23 @@ fn filters_screen(state: &Launcher) -> Element<'_, Message> {
         Column::with_children(if let Some(ref authors) = state.filter_authors {
             authors
                 .iter()
-                .map(|a| {
-                    button(a.name.as_str())
-                        .on_press_maybe(if state.disallow_filter_group_switching {
-                            None
-                        } else {
-                            Some(Message::FilterAuthorSelected(a.clone()))
-                        })
-                        .width(Fill)
-                        .style(if Some(a) == state.selected_author.as_ref() {
-                            primary_button_style_scrollable
-                        } else {
-                            secondary_button_style_scrollable
-                        })
-                        .into()
+                .enumerate()
+                .map(|(index, a)| {
+                    navigation_target(
+                        button(a.name.as_str())
+                            .on_press_maybe(if state.disallow_filter_group_switching {
+                                None
+                            } else {
+                                Some(Message::FilterAuthorSelected(a.clone()))
+                            })
+                            .width(Fill)
+                            .style(if Some(a) == state.selected_author.as_ref() {
+                                primary_button_style_scrollable
+                            } else {
+                                secondary_button_style_scrollable
+                            }),
+                        state.focus_index == index + 1,
+                    )
                 })
                 .collect::<Vec<_>>()
         } else {
@@ -1262,41 +1529,45 @@ fn filters_screen(state: &Launcher) -> Element<'_, Message> {
         if let Some(ref filters) = state.filters {
             filters
                 .iter()
-                .map(|(filter, filter_sha)| {
-                    button(filter.name.as_str())
-                        .on_press_maybe(if state.disallow_filter_group_switching {
-                            None
-                        } else {
-                            Some(Message::FilterSelected((
-                                filter.clone(),
-                                filter_sha.clone(),
-                            )))
-                        })
-                        .width(Fill)
-                        .style(
-                            if let Some((sf, _)) = state.selected_filter.as_ref()
-                                && sf == filter
-                            {
-                                primary_button_style_scrollable
-                            } else if let Some((sf, _)) = state.settings.active_filter.as_ref()
-                                && sf == filter
-                            {
-                                active_button_style_scrollable
-                            } else if let Some(curr_sha) =
-                                state.settings.downloaded_filters.get(filter)
-                            {
-                                // We check if it's downloaded at all
-                                // Now we separate if it needs updating or not
-                                if curr_sha != filter_sha {
-                                    updatable_button_style_scrollable
-                                } else {
-                                    downloaded_button_style_scrollable
-                                }
+                .enumerate()
+                .map(|(index, (filter, filter_sha))| {
+                    let focus_index = 1 + state.filter_authors.as_ref().map_or(0, Vec::len) + index;
+                    navigation_target(
+                        button(filter.name.as_str())
+                            .on_press_maybe(if state.disallow_filter_group_switching {
+                                None
                             } else {
-                                secondary_button_style_scrollable
-                            },
-                        )
-                        .into()
+                                Some(Message::FilterSelected((
+                                    filter.clone(),
+                                    filter_sha.clone(),
+                                )))
+                            })
+                            .width(Fill)
+                            .style(
+                                if let Some((sf, _)) = state.selected_filter.as_ref()
+                                    && sf == filter
+                                {
+                                    primary_button_style_scrollable
+                                } else if let Some((sf, _)) = state.settings.active_filter.as_ref()
+                                    && sf == filter
+                                {
+                                    active_button_style_scrollable
+                                } else if let Some(curr_sha) =
+                                    state.settings.downloaded_filters.get(filter)
+                                {
+                                    // We check if it's downloaded at all
+                                    // Now we separate if it needs updating or not
+                                    if curr_sha != filter_sha {
+                                        updatable_button_style_scrollable
+                                    } else {
+                                        downloaded_button_style_scrollable
+                                    }
+                                } else {
+                                    secondary_button_style_scrollable
+                                },
+                            ),
+                        focus_index == state.focus_index,
+                    )
                 })
                 .collect::<Vec<_>>()
         } else {
@@ -1310,66 +1581,81 @@ fn filters_screen(state: &Launcher) -> Element<'_, Message> {
     selections = selections.push(filters_selection);
 
     let controls = row![
-        button("Activate")
-            .on_press_maybe(
-                if let Some((ref sel_filter, _)) = state.selected_filter
-                    && state.settings.active_filter != state.selected_filter
-                    && (state.settings.downloaded_filters.contains_key(sel_filter)
-                        || state
-                            .selected_filter
-                            .as_ref()
-                            .map(|(f, _)| f.grouping.name.as_str() == "Local")
-                            .unwrap_or(false))
-                {
-                    Some(Message::ActivateButton)
-                } else {
-                    None
-                }
-            )
-            .style(primary_button_style),
-        Space::new().width(space::XS),
-        button("Download")
-            .on_press_maybe(
-                if let Some((ref sel_filter, ref sel_filter_sha)) = state.selected_filter
-                    && state
-                        .selected_filter
-                        .as_ref()
-                        .map(|(f, _)| f.grouping.name.as_str() != "Local")
-                        .unwrap_or(false)
-                {
-                    // If it's out of date, we should expose Download again
-                    if let Some(local_filter_sha) =
-                        state.settings.downloaded_filters.get(sel_filter)
-                        && local_filter_sha != sel_filter_sha
+        navigation_target(
+            button("Activate")
+                .on_press_maybe(
+                    if let Some((ref sel_filter, _)) = state.selected_filter
+                        && state.settings.active_filter != state.selected_filter
+                        && (state.settings.downloaded_filters.contains_key(sel_filter)
+                            || state
+                                .selected_filter
+                                .as_ref()
+                                .map(|(f, _)| f.grouping.name.as_str() == "Local")
+                                .unwrap_or(false))
                     {
-                        Some(Message::DownloadButton)
-                    } else if !state.settings.downloaded_filters.contains_key(sel_filter) {
-                        Some(Message::DownloadButton)
+                        Some(Message::ActivateButton)
                     } else {
                         None
                     }
-                } else {
-                    None
-                }
-            )
-            .style(primary_button_style),
+                )
+                .style(primary_button_style),
+            state.focus_index
+                == 1 + state.filter_authors.as_ref().map_or(0, Vec::len)
+                    + state.filters.as_ref().map_or(0, Vec::len)
+        ),
         Space::new().width(space::XS),
-        button("Remove")
-            .on_press_maybe(
-                if let Some((ref sel_filter, _)) = state.selected_filter
-                    && (state.settings.downloaded_filters.contains_key(sel_filter)
-                        || state
+        navigation_target(
+            button("Download")
+                .on_press_maybe(
+                    if let Some((ref sel_filter, ref sel_filter_sha)) = state.selected_filter
+                        && state
                             .selected_filter
                             .as_ref()
-                            .map(|(f, _)| f.grouping.name.as_str() == "Local")
-                            .unwrap_or(false))
-                {
-                    Some(Message::RemoveButton)
-                } else {
-                    None
-                }
-            )
-            .style(primary_button_style),
+                            .map(|(f, _)| f.grouping.name.as_str() != "Local")
+                            .unwrap_or(false)
+                    {
+                        // If it's out of date, we should expose Download again
+                        if let Some(local_filter_sha) =
+                            state.settings.downloaded_filters.get(sel_filter)
+                            && local_filter_sha != sel_filter_sha
+                        {
+                            Some(Message::DownloadButton)
+                        } else if !state.settings.downloaded_filters.contains_key(sel_filter) {
+                            Some(Message::DownloadButton)
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                )
+                .style(primary_button_style),
+            state.focus_index
+                == 2 + state.filter_authors.as_ref().map_or(0, Vec::len)
+                    + state.filters.as_ref().map_or(0, Vec::len)
+        ),
+        Space::new().width(space::XS),
+        navigation_target(
+            button("Remove")
+                .on_press_maybe(
+                    if let Some((ref sel_filter, _)) = state.selected_filter
+                        && (state.settings.downloaded_filters.contains_key(sel_filter)
+                            || state
+                                .selected_filter
+                                .as_ref()
+                                .map(|(f, _)| f.grouping.name.as_str() == "Local")
+                                .unwrap_or(false))
+                    {
+                        Some(Message::RemoveButton)
+                    } else {
+                        None
+                    }
+                )
+                .style(primary_button_style),
+            state.focus_index
+                == 3 + state.filter_authors.as_ref().map_or(0, Vec::len)
+                    + state.filters.as_ref().map_or(0, Vec::len)
+        ),
     ];
 
     let content = col![
@@ -1398,8 +1684,116 @@ fn worker() -> impl Stream<Item = Message> {
     })
 }
 
+fn keyboard_navigation() -> Subscription<Message> {
+    keyboard::listen().filter_map(|event| match event {
+        keyboard::Event::KeyPressed {
+            key: keyboard::Key::Named(key),
+            modifiers,
+            repeat: false,
+            ..
+        } => match key {
+            keyboard::key::Named::ArrowUp => Some(Message::Navigate(Navigation::Previous)),
+            keyboard::key::Named::ArrowDown => Some(Message::Navigate(Navigation::Next)),
+            keyboard::key::Named::ArrowLeft => Some(Message::Navigate(Navigation::Left)),
+            keyboard::key::Named::ArrowRight => Some(Message::Navigate(Navigation::Right)),
+            keyboard::key::Named::Enter | keyboard::key::Named::Space => {
+                Some(Message::Navigate(Navigation::Activate))
+            }
+            keyboard::key::Named::Escape => Some(Message::Navigate(Navigation::Back)),
+            keyboard::key::Named::Tab if modifiers.shift() => {
+                Some(Message::Navigate(Navigation::Previous))
+            }
+            keyboard::key::Named::Tab => Some(Message::Navigate(Navigation::Next)),
+            _ => None,
+        },
+        _ => None,
+    })
+}
+
+#[cfg(target_os = "linux")]
+fn gamepad_worker() -> impl Stream<Item = Message> {
+    stream::channel(100, async |mut output| {
+        let Ok(mut gilrs) = Gilrs::new() else {
+            return;
+        };
+
+        let mut last_stick_navigation = Instant::now();
+
+        loop {
+            while let Some(event) = gilrs.next_event() {
+                let navigation = match event.event {
+                    GamepadEventType::ButtonPressed(GamepadButton::DPadUp, _)
+                    | GamepadEventType::ButtonRepeated(GamepadButton::DPadUp, _) => {
+                        Some(Navigation::Previous)
+                    }
+                    GamepadEventType::ButtonPressed(GamepadButton::DPadDown, _)
+                    | GamepadEventType::ButtonRepeated(GamepadButton::DPadDown, _) => {
+                        Some(Navigation::Next)
+                    }
+                    GamepadEventType::ButtonPressed(GamepadButton::DPadLeft, _)
+                    | GamepadEventType::ButtonRepeated(GamepadButton::DPadLeft, _) => {
+                        Some(Navigation::Left)
+                    }
+                    GamepadEventType::ButtonPressed(GamepadButton::DPadRight, _)
+                    | GamepadEventType::ButtonRepeated(GamepadButton::DPadRight, _) => {
+                        Some(Navigation::Right)
+                    }
+                    GamepadEventType::ButtonPressed(GamepadButton::South, _)
+                    | GamepadEventType::ButtonPressed(GamepadButton::Start, _) => {
+                        Some(Navigation::Activate)
+                    }
+                    GamepadEventType::ButtonPressed(GamepadButton::East, _)
+                    | GamepadEventType::ButtonPressed(GamepadButton::Select, _) => {
+                        Some(Navigation::Back)
+                    }
+                    GamepadEventType::AxisChanged(GamepadAxis::LeftStickY, value, _)
+                        if value.abs() >= 0.65
+                            && last_stick_navigation.elapsed() >= Duration::from_millis(180) =>
+                    {
+                        last_stick_navigation = Instant::now();
+                        Some(if value > 0.0 {
+                            Navigation::Next
+                        } else {
+                            Navigation::Previous
+                        })
+                    }
+                    GamepadEventType::AxisChanged(GamepadAxis::LeftStickX, value, _)
+                        if value.abs() >= 0.65
+                            && last_stick_navigation.elapsed() >= Duration::from_millis(180) =>
+                    {
+                        last_stick_navigation = Instant::now();
+                        Some(if value > 0.0 {
+                            Navigation::Right
+                        } else {
+                            Navigation::Left
+                        })
+                    }
+                    _ => None,
+                };
+
+                if let Some(navigation) = navigation
+                    && output.send(Message::Navigate(navigation)).await.is_err()
+                {
+                    return;
+                }
+            }
+
+            tokio::time::sleep(Duration::from_millis(16)).await;
+        }
+    })
+}
+
+#[cfg(not(target_os = "linux"))]
+fn gamepad_worker() -> impl Stream<Item = Message> {
+    stream::channel(1, async |mut _output| std::future::pending::<()>().await)
+}
+
 fn subscription(_: &Launcher) -> Subscription<Message> {
-    Subscription::run(worker)
+    Subscription::batch([
+        Subscription::run(worker),
+        Subscription::run(gamepad_worker),
+        keyboard_navigation(),
+    ])
 }
 
 fn main() -> Result<()> {
@@ -1516,6 +1910,7 @@ where
 fn display_error(state: &mut Launcher, error: String) {
     state.error_prev_screen = Some(state.gui_state.clone());
     state.gui_state = GuiState::Error(error);
+    state.focus_index = 0;
 }
 
 #[cfg(target_os = "linux")]

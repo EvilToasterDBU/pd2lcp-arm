@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 
 RUN apt-get update
 
-RUN apt-get install build-essential pkg-config libwayland-dev libx11-dev libxcursor-dev libxrandr-dev libvulkan-dev libxkbcommon-dev curl file appstream llvm clang -y
+RUN apt-get install build-essential pkg-config libwayland-dev libx11-dev libxcursor-dev libxrandr-dev libvulkan-dev libxkbcommon-dev libudev-dev curl file appstream llvm clang -y
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain nightly -y
 

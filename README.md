@@ -51,3 +51,8 @@ Android is a bit more involved, since you're in an externally managed Wine envir
 ## Runtime Flags
 - `-gamemode` - Launches PD2LCP in full screen mode (does nothing on Android; gamemode is the default there)
 - `-skiplauncher` - Skips loading the launcher UI and just starts the game (it will still check for updates and if it finds any, it will open the UI to show progress, then launch)
+
+## Launcher Controls
+- **Touchscreen:** buttons, checkboxes, renderer selection, and the UI scale slider accept touch input.
+- **Gamepad:** D-pad or left stick moves the focus; South (A/Cross) or Start activates; East (B/Circle) or Select goes back.
+- **Keyboard:** arrow keys move the focus, Enter or Space activates, Escape goes back, and Tab moves through controls.

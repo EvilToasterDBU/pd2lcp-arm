@@ -13,6 +13,9 @@ libpd2lcp = { path = "../libpd2lcp" }
 rfd = "0.17.2"
 tokio = "1.53.1"
 
+[target.'cfg(target_os = "linux")'.dependencies]
+gilrs = "0.11.2"
+
 [package.metadata.appimage]
 icon = "../../icon.svg"
 desktop_entry = "../../pd2lcp.desktop"
