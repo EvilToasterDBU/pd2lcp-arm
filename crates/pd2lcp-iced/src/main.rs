@@ -456,6 +456,7 @@ struct Launcher {
 
     // Controller and keyboard navigation
     focus_index: usize,
+    window_focused: bool,
 }
 
 impl Launcher {
@@ -493,6 +494,7 @@ impl Launcher {
             confirm: false,
 
             focus_index: 0,
+            window_focused: true,
         }
     }
 }
@@ -532,6 +534,7 @@ enum Message {
     BnetCheckbox(bool),
     ForceX11Checkbox(bool),
     UpdatesCheckbox(bool),
+    RussianLanguageCheckbox(bool),
     ScaleSlider(f32),
 
     // Installers selected
@@ -572,6 +575,8 @@ enum Message {
 
     // Keyboard/gamepad navigation
     Navigate(Navigation),
+    GamepadNavigate(Navigation),
+    WindowFocusChanged(bool),
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -589,7 +594,7 @@ fn navigation_item_count(state: &Launcher) -> usize {
         GuiState::Init | GuiState::Error(_) => 1,
         GuiState::InstallD2 | GuiState::InstallLOD => 1 + usize::from(state.allow_next),
         GuiState::Main => 4,
-        GuiState::Settings => 9,
+        GuiState::Settings => 10,
         GuiState::Filters => {
             4 + state.filter_authors.as_ref().map_or(0, Vec::len)
                 + state.filters.as_ref().map_or(0, Vec::len)
@@ -632,9 +637,12 @@ fn navigation_message(state: &Launcher) -> Option<Message> {
             3 => Some(Message::BnetCheckbox(!state.new_settings.skiptobnet)),
             4 => Some(Message::UpdatesCheckbox(!state.new_settings.no_updates)),
             5 => Some(Message::ForceX11Checkbox(!state.new_settings.force_x11)),
-            6 => None,
-            7 => Some(Message::ResetButton),
-            8 if state.settings != state.new_settings => Some(Message::ApplyButton),
+            6 => Some(Message::RussianLanguageCheckbox(
+                !state.new_settings.russian_language,
+            )),
+            7 => None,
+            8 => Some(Message::ResetButton),
+            9 if state.settings != state.new_settings => Some(Message::ApplyButton),
             _ => None,
         },
         GuiState::Filters => {
@@ -713,17 +721,18 @@ fn update(state: &mut Launcher, message: Message) -> Task<Message> {
                         GraphicsMode::_3DFX => GraphicsMode::DDRAW,
                     };
                 }
-                GuiState::Settings if (2..=5).contains(&state.focus_index) => {
+                GuiState::Settings if (2..=6).contains(&state.focus_index) => {
                     let value = matches!(navigation, Navigation::Right);
                     match state.focus_index {
                         2 => state.new_settings.sndbkg = value,
                         3 => state.new_settings.skiptobnet = value,
                         4 => state.new_settings.no_updates = value,
                         5 => state.new_settings.force_x11 = value,
+                        6 => state.new_settings.russian_language = value,
                         _ => (),
                     }
                 }
-                GuiState::Settings if state.focus_index == 6 => {
+                GuiState::Settings if state.focus_index == 7 => {
                     let delta = if matches!(navigation, Navigation::Right) {
                         0.05
                     } else {
@@ -758,6 +767,12 @@ fn update(state: &mut Launcher, message: Message) -> Task<Message> {
                 GuiState::Init | GuiState::InstallD2 | GuiState::Main => (),
             },
         },
+        Message::GamepadNavigate(navigation) => {
+            if state.window_focused {
+                return update(state, Message::Navigate(navigation));
+            }
+        }
+        Message::WindowFocusChanged(focused) => state.window_focused = focused,
         Message::ResetButton => 'rst: {
             if !state.confirm {
                 state.confirm = true;
@@ -905,6 +920,7 @@ fn update(state: &mut Launcher, message: Message) -> Task<Message> {
         Message::SoundCheckbox(b) => state.new_settings.sndbkg = b,
         Message::BnetCheckbox(b) => state.new_settings.skiptobnet = b,
         Message::UpdatesCheckbox(b) => state.new_settings.no_updates = b,
+        Message::RussianLanguageCheckbox(b) => state.new_settings.russian_language = b,
         Message::ForceX11Checkbox(b) => state.new_settings.force_x11 = b,
         Message::ScaleSlider(scale) => state.new_settings.scale_factor = scale / 100.0,
         Message::ApplyButton => {
@@ -1385,6 +1401,14 @@ fn settings_screen(state: &Launcher) -> Element<'_, Message> {
                         .on_toggle(Message::ForceX11Checkbox),
                     state.focus_index == 5,
                 ),
+                Space::new().height(space::XS),
+                navigation_target(
+                    checkbox(state.new_settings.russian_language)
+                        .label("Russian language")
+                        .style(checkbox_style)
+                        .on_toggle(Message::RussianLanguageCheckbox),
+                    state.focus_index == 6,
+                ),
             ]
         ),
         Space::new().height(space::LG),
@@ -1405,7 +1429,7 @@ fn settings_screen(state: &Launcher) -> Element<'_, Message> {
                         Message::ScaleSlider
                     )
                     .style(slider_style),
-                    state.focus_index == 6,
+                    state.focus_index == 7,
                 )
             ]
         ),
@@ -1422,7 +1446,7 @@ fn settings_screen(state: &Launcher) -> Element<'_, Message> {
                         .on_press(Message::ResetButton),
                 )
                 .align_left(Fill),
-                state.focus_index == 7,
+                state.focus_index == 8,
             ),
             navigation_target(
                 container(
@@ -1435,7 +1459,7 @@ fn settings_screen(state: &Launcher) -> Element<'_, Message> {
                         }),
                 )
                 .align_right(Fill),
-                state.focus_index == 8,
+                state.focus_index == 9,
             )
         ]
     ]
@@ -1772,7 +1796,10 @@ fn gamepad_worker() -> impl Stream<Item = Message> {
                 };
 
                 if let Some(navigation) = navigation
-                    && output.send(Message::Navigate(navigation)).await.is_err()
+                    && output
+                        .send(Message::GamepadNavigate(navigation))
+                        .await
+                        .is_err()
                 {
                     return;
                 }
@@ -1780,6 +1807,14 @@ fn gamepad_worker() -> impl Stream<Item = Message> {
 
             tokio::time::sleep(Duration::from_millis(16)).await;
         }
+    })
+}
+
+fn window_focus_events() -> Subscription<Message> {
+    iced::window::events().filter_map(|(_, event)| match event {
+        iced::window::Event::Focused => Some(Message::WindowFocusChanged(true)),
+        iced::window::Event::Unfocused => Some(Message::WindowFocusChanged(false)),
+        _ => None,
     })
 }
 
@@ -1793,6 +1828,7 @@ fn subscription(_: &Launcher) -> Subscription<Message> {
         Subscription::run(worker),
         Subscription::run(gamepad_worker),
         keyboard_navigation(),
+        window_focus_events(),
     ])
 }
 

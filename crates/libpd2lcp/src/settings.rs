@@ -17,6 +17,7 @@ pub struct Settings {
     pub skiptobnet: bool,
     pub sndbkg: bool,
     pub no_updates: bool,
+    pub russian_language: bool,
 
     // Force x11
     pub force_x11: bool,
@@ -37,6 +38,8 @@ pub struct SettingsSerialisable {
     skiptobnet: bool,
     sndbkg: bool,
     no_updates: bool,
+    #[serde(default)]
+    russian_language: bool,
 
     // Force x11
     pub force_x11: bool,
@@ -66,6 +69,7 @@ impl Default for Settings {
             skiptobnet: true,
             sndbkg: false,
             no_updates: false,
+            russian_language: false,
             scale_factor: 1.0,
             downloaded_filters: HashMap::new(),
             active_filter: None,
@@ -81,6 +85,7 @@ impl From<SettingsSerialisable> for Settings {
             sndbkg: value.sndbkg,
             force_x11: value.force_x11,
             no_updates: value.no_updates,
+            russian_language: value.russian_language,
             scale_factor: value.scale_factor,
             active_filter: value.active_filter,
             downloaded_filters: value.downloaded_filters.into_iter().collect(),
@@ -96,6 +101,7 @@ impl From<Settings> for SettingsSerialisable {
             sndbkg: value.sndbkg,
             force_x11: value.force_x11,
             no_updates: value.no_updates,
+            russian_language: value.russian_language,
             scale_factor: value.scale_factor,
             active_filter: value.active_filter,
             downloaded_filters: value.downloaded_filters.into_iter().collect(),
@@ -118,6 +124,10 @@ impl Settings {
 
         if self.sndbkg {
             args.push("-sndbkg");
+        }
+
+        if self.russian_language {
+            args.push("-direct");
         }
 
         args
