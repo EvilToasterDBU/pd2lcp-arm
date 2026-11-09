@@ -16,6 +16,7 @@ exits, there will also be a second proper installer, and only after you've gone 
 
 ### Linux
 Installation on Linux is fairly simple.
+On ARM64, the AppImage includes Box64 and uses a Wine WoW64 build so it can launch both 32-bit and 64-bit Windows installers without system-wide emulator setup.
 #### Prerequisites
   - Official D2 and D2 LOD installers from battle.net
   - Valid CD keys

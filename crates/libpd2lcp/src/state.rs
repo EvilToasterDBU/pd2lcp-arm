@@ -1,7 +1,7 @@
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-use tokio::io::AsyncWriteExt;
+use tokio::{io::AsyncWriteExt, process::Command};
 
 use crate::error::Error;
 use crate::event::EventNotify;
@@ -165,6 +165,56 @@ impl State {
 
     pub fn wine_exe(&self, exe: &str) -> Result<PathBuf, Error> {
         self.wine_dir().map(|p| p.join("bin").join(exe))
+    }
+
+    pub fn wine_command(&self, exe: &str) -> Result<Command, Error> {
+        let wine_exe = self.wine_exe(exe)?;
+
+        #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
+        {
+            let wine_dir = self.wine_dir()?;
+            let mut command = Command::new(self.box64_exe());
+            command.arg(wine_exe).env(
+                "BOX64_LD_LIBRARY_PATH",
+                format!(
+                    "{}:{}",
+                    wine_dir.join("lib64").display(),
+                    wine_dir.join("lib").display()
+                ),
+            );
+            return Ok(command);
+        }
+
+        #[cfg(not(all(target_os = "linux", target_arch = "aarch64")))]
+        {
+            Ok(Command::new(wine_exe))
+        }
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
+    fn box64_exe(&self) -> PathBuf {
+        if let Some(app_dir) = std::env::var_os("APPDIR") {
+            let bundled = PathBuf::from(app_dir).join("box64");
+            if bundled.is_file() {
+                return bundled;
+            }
+        }
+
+        if let Ok(executable) = std::env::current_exe() {
+            if let Some(app_dir) = executable
+                .parent()
+                .and_then(Path::parent)
+                .and_then(Path::parent)
+            {
+                let bundled = app_dir.join("box64");
+                if bundled.is_file() {
+                    return bundled;
+                }
+            }
+        }
+
+        // Allow a system Box64 installation to override the bundled emulator.
+        PathBuf::from("box64")
     }
 
     pub fn wine_dosdevice(&self, dosdevice: &str) -> Result<PathBuf, Error> {

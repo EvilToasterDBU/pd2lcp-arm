@@ -2,6 +2,10 @@
 
 set -e
 
+mkdir -p target/box64
+rm -f target/box64/box64
+touch target/box64/.keep
+
 cargo b -Zbuild-std --release
 cargo xwin b --target x86_64-pc-windows-msvc --release --features=gamemode
 

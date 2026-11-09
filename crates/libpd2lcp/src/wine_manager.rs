@@ -9,7 +9,16 @@ use crate::{
     state::State,
 };
 
-pub const WINE_URL: &str = "https://github.com/Kron4ek/Wine-Builds/releases/download/11.14/wine-11.14-staging-tkg-amd64.tar.xz";
+const WINE_ARCHIVE_NAME: &str = if cfg!(target_arch = "aarch64") {
+    "wine-11.14-staging-tkg-amd64-wow64"
+} else {
+    "wine-11.14-staging-tkg-amd64"
+};
+pub const WINE_URL: &str = if cfg!(target_arch = "aarch64") {
+    "https://github.com/Kron4ek/Wine-Builds/releases/download/11.14/wine-11.14-staging-tkg-amd64-wow64.tar.xz"
+} else {
+    "https://github.com/Kron4ek/Wine-Builds/releases/download/11.14/wine-11.14-staging-tkg-amd64.tar.xz"
+};
 
 pub async fn fetch_wine(state: &State) -> Result<(), Error> {
     let install_path = state.wine_dir()?;
@@ -47,7 +56,7 @@ pub async fn fetch_wine(state: &State) -> Result<(), Error> {
         return Err(Error::FailedToUntarArchive);
     }
 
-    while let Some(file) = read_dir(install_path.join("wine-11.14-staging-tkg-amd64"))
+    while let Some(file) = read_dir(install_path.join(WINE_ARCHIVE_NAME))
         .await?
         .next_entry()
         .await?
@@ -63,7 +72,8 @@ pub async fn create_prefix(state: &State) -> Result<(), Error> {
 
     create_dir_all(prefix).await?;
 
-    let status = Command::new(state.wine_exe("wineboot")?)
+    let status = state
+        .wine_command("wineboot")?
         .env("WINEPREFIX", prefix)
         .arg("-i")
         .status()
@@ -74,7 +84,8 @@ pub async fn create_prefix(state: &State) -> Result<(), Error> {
     }
 
     // wine reg add "HKCU\\Software\\Wine" /v Version /d win7 /f
-    let status_set_win7 = Command::new(state.wine_exe("wine")?)
+    let status_set_win7 = state
+        .wine_command("wine")?
         .env("WINEPREFIX", prefix)
         .args([
             "reg",
@@ -98,7 +109,8 @@ pub async fn create_prefix(state: &State) -> Result<(), Error> {
         .context("Failed to symlink games folder -> a: dosdevice")?;
 
     // Now we kill wineserver to update dosdevices
-    let status_wineserver = Command::new(state.wine_exe("wineserver")?)
+    let status_wineserver = state
+        .wine_command("wineserver")?
         .env("WINEPREFIX", prefix)
         .arg("-k")
         .status()

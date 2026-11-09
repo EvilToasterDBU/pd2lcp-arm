@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+#[cfg(target_os = "windows")]
 use tokio::process::Command;
 
 use crate::{error::Error, state::State};
@@ -8,7 +9,8 @@ use crate::{error::Error, state::State};
 pub async fn install_d2(state: Option<State>, d2_installer: PathBuf) -> Result<(), Error> {
     let state = state.ok_or(Error::Pd2lcpNotInitialised)?;
 
-    let status_d2 = Command::new(state.wine_exe("wine")?)
+    let status_d2 = state
+        .wine_command("wine")?
         .env("WINEPREFIX", state.wine_prefix()?)
         .arg(d2_installer)
         .status()
@@ -25,7 +27,8 @@ pub async fn install_d2(state: Option<State>, d2_installer: PathBuf) -> Result<(
 pub async fn install_d2_lod(state: Option<State>, d2_lod_installer: PathBuf) -> Result<(), Error> {
     let state = state.ok_or(Error::Pd2lcpNotInitialised)?;
 
-    let status_d2_lod = Command::new(state.wine_exe("wine")?)
+    let status_d2_lod = state
+        .wine_command("wine")?
         .env("WINEPREFIX", state.wine_prefix()?)
         .arg(d2_lod_installer)
         .status()
@@ -66,7 +69,8 @@ pub async fn relocate_files(state: Option<State>) -> Result<(), Error> {
 
     let prefix = state.wine_prefix()?;
 
-    let output = Command::new(state.wine_exe("wine")?)
+    let output = state
+        .wine_command("wine")?
         .env("WINEPREFIX", prefix)
         .args([
             "reg",

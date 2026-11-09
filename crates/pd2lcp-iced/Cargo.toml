@@ -19,3 +19,4 @@ gilrs = "0.11.2"
 [package.metadata.appimage]
 icon = "../../icon.svg"
 desktop_entry = "../../pd2lcp.desktop"
+assets = ["../../target/box64"]
