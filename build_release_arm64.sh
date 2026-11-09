@@ -21,7 +21,7 @@ curl -L --fail --retry 3 \
   -o "$BOX64_LIBS_ARCHIVE" \
   https://github.com/ptitSeb/box64/releases/download/v0.4.4/box64-bundle-x86-libs-v0.4.4.tar.gz
 echo '1d4a8787a8a92267c1be673ec194c69e3bb33d14c800575d94131084142fcff0  target/box64-x86-libs.tar.gz' | sha256sum -c -
-tar -xzf "$BOX64_LIBS_ARCHIVE" -C "$BOX64_ASSET"
+install -m 0644 "$BOX64_LIBS_ARCHIVE" "$BOX64_ASSET/box64-x86-libs.tar.gz"
 
 cargo +nightly build -Zbuild-std --release -p pd2lcp-iced
 

@@ -174,10 +174,10 @@ impl State {
         {
             let wine_dir = self.wine_dir()?;
             let box64_exe = self.box64_exe();
-            let box64_libs = box64_exe
-                .parent()
-                .map(|path| path.join("usr/lib/box64-x86_64-linux-gnu"));
+            let box64_libs = wine_dir.join("box64-libs/usr/lib/box64-x86_64-linux-gnu");
             let library_path = box64_libs
+                .is_dir()
+                .then_some(box64_libs)
                 .filter(|path| path.is_dir())
                 .map(|path| format!("{}:", path.display()))
                 .unwrap_or_default();
@@ -225,6 +225,12 @@ impl State {
 
         // Allow a system Box64 installation to override the bundled emulator.
         PathBuf::from("box64")
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
+    pub(crate) fn box64_libs_archive(&self) -> Option<PathBuf> {
+        let archive = self.box64_exe().parent()?.join("box64-x86-libs.tar.gz");
+        archive.is_file().then_some(archive)
     }
 
     pub fn wine_dosdevice(&self, dosdevice: &str) -> Result<PathBuf, Error> {

@@ -64,6 +64,34 @@ pub async fn fetch_wine(state: &State) -> Result<(), Error> {
         rename(file.path(), install_path.join(file.file_name())).await?;
     }
 
+    #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
+    unpack_box64_libraries(state).await?;
+
+    Ok(())
+}
+
+#[cfg(all(target_os = "linux", target_arch = "aarch64"))]
+async fn unpack_box64_libraries(state: &State) -> Result<(), Error> {
+    let Some(archive) = state.box64_libs_archive() else {
+        return Ok(());
+    };
+
+    let install_path = state.wine_dir()?.join("box64-libs");
+    create_dir_all(&install_path).await?;
+
+    let status = Command::new("tar")
+        .arg("-xzf")
+        .arg(archive)
+        .arg("-C")
+        .arg(install_path)
+        .status()
+        .await
+        .context("Failed to extract Box64 libraries")?;
+
+    if !status.success() {
+        return Err(Error::FailedToUntarArchive);
+    }
+
     Ok(())
 }
 
