@@ -1,6 +1,6 @@
 # Russian S14 native HD menu text
 
-The PD2 fork of D2GL replaces menu DC6 images with real HD text in `HDText::drawImage`. It recognizes their frame count and last-frame dimensions. The English table includes PD2 controls; the Russian table contains only vanilla controls. Repainting or resizing localized DC6s breaks this recognition.
+The PD2 fork of D2GL replaces menu DC6 images with real HD text in `HDText::drawImage`. It recognizes their frame count and last-frame dimensions. The English table includes PD2 controls; the Russian table contains only vanilla controls. Every PD2 label is reviewed against its English meaning, including toggles with no S9 equivalent. Repainting or resizing localized DC6s breaks this recognition.
 
 `apply_translation.py` adds all 80 PD2 entries to the Russian table, using the original renderer's font selection, colors, shadows and alignment. It preserves the existing vanilla Russian entries. Two ambiguous signatures (SkillBar and SNext) receive distinct transparent canvas widths, without repainting glyphs.
 

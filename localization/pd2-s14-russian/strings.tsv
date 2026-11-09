@@ -200,11 +200,11 @@ skillxld6	 	 	S9 reused
 skillxan6	 	 	S9 reused
 skillxname7	 	 	S9 reused
 skillxsd7	 	 	S9 reused
-skillxld7	or bolts with fire\nmagically enhances your arrows	наделяет стрелы\nуроном от огня	S9 reused
+skillxld7	or bolts with fire\nmagically enhances your arrows	Магически усиливает стрелы\nи арбалетные болты уроном от огня	S9 revised
 skillxan7	 	 	S9 reused
 skillxname8	 	 	S9 reused
 skillxsd8	 	 	S9 reused
-skillxld8	cold arrows only do half of their regular damage\nby adding cold damage and a slowing effect\nmagically enhances your arrows or bolts	которые наносят половину от обычного урона\nнаделяет стрелы уроном от\nхолода и замедляющим эффектом,	S9 reused
+skillxld8	cold arrows only do half of their regular damage\nby adding cold damage and a slowing effect\nmagically enhances your arrows or bolts	Ледяные стрелы наносят лишь половину обычного урона\nМагически усиливает стрелы и арбалетные\nболты, добавляя урон от холода и замедление	S9 revised
 skillxan8	 	 	S9 reused
 skillxname9	 	 	S9 reused
 skillxsd9	 	 	S9 reused
@@ -216,7 +216,7 @@ skillxld10	 	 	S9 reused
 skillxan10	 	 	S9 reused
 skillxname11	 	 	S9 reused
 skillxsd11	 	 	S9 reused
-skillxld11	cold arrows only do half of their regular damage\nby adding cold damage and a slowing effect\nmagically enhances your arrows or bolts	которые наносят половину от обычного урона\nнаделяет стрелы уроном от\nхолода и замедляющим эффектом,	S9 reused
+skillxld11	cold arrows only do half of their regular damage\nby adding cold damage and a slowing effect\nmagically enhances your arrows or bolts	Ледяные стрелы наносят лишь половину обычного урона\nМагически усиливает стрелы и арбалетные\nболты, добавляя урон от холода и замедление	S9 revised
 skillxan11	 	 	S9 reused
 skillxname12	 	 	S9 reused
 skillxsd12	 	 	S9 reused
@@ -236,7 +236,7 @@ skillxld15	 	 	S9 reused
 skillxan15	 	 	S9 reused
 skillxname16	 	 	S9 reused
 skillxsd16	 	 	S9 reused
-skillxld16	contact, damaging all nearby enemies\nenchants an arrow or bolt that explodes on	при попадании, поражая ближайших противников\nнаделяет стрелы снарядами, которые взрываются	S9 reused
+skillxld16	contact, damaging all nearby enemies\nenchants an arrow or bolt that explodes on	Зачаровывает стрелу или арбалетный болт, который взрывается при попадании,\nнанося урон всем ближайшим противникам	S9 revised
 skillxan16	 	 	S9 reused
 skillxname17	 	 	S9 reused
 skillxsd17	 	 	S9 reused
@@ -256,7 +256,7 @@ skillxld20	 	 	S9 reused
 skillxan20	 	 	S9 reused
 skillxname21	 	 	S9 reused
 skillxsd21	 	 	S9 reused
-skillxld21	to freeze your enemies\nmagically enhances your arrow or bolt	наделяет стрелы\nзамораживающим эффектом	S9 reused
+skillxld21	to freeze your enemies\nmagically enhances your arrow or bolt	Магически усиливает стрелу или арбалетный болт,\nчтобы замораживать врагов	S9 revised
 skillxan21	 	 	S9 reused
 skillxname22	 	 	S9 reused
 skillxsd22	 	 	S9 reused
@@ -280,7 +280,7 @@ skillxld26	 	 	S9 reused
 skillxan26	 	 	S9 reused
 skillxname27	 	 	S9 reused
 skillxsd27	 	 	S9 reused
-skillxld27	creates a pyre upon impact\ncause severe fire damage and\nenhances arrows or bolts to	образуют костер при попадании\nнаносят серьезный урон от огня и\nнаделяет стрелы снарядами, которые	S9 reused
+skillxld27	creates a pyre upon impact\ncause severe fire damage and\nenhances arrows or bolts to	Усиливает стрелы и арбалетные болты,\nчтобы наносить серьёзный урон от огня\nи создавать костёр при попадании	S9 revised
 skillxan27	 	 	S9 reused
 skillxname28	 	 	S9 reused
 skillxsd28	 	 	S9 reused
@@ -296,7 +296,7 @@ skillxld30	 	 	S9 reused
 skillxan30	 	 	S9 reused
 skillxname31	 	 	S9 reused
 skillxsd31	 	 	S9 reused
-skillxld31	to freeze entire groups of monsters\nmagically enhances an arrow or bolt	эффектом целой группы монстров\nнаделяет стрелы замораживающим	S9 reused
+skillxld31	to freeze entire groups of monsters\nmagically enhances an arrow or bolt	Магически усиливает стрелу или арбалетный болт,\nчтобы замораживать целые группы монстров	S9 revised
 skillxan31	 	 	S9 reused
 skillxname32	 	 	S9 reused
 skillxsd32	 	 	S9 reused
@@ -925,9 +925,9 @@ Manacoredplev	Mana Cost per Level	к затратам маны за уровен
 Missplev1	Missiles per Level	снарядов за уровень	S9 reused
 Missplev2	+1 Missile per Level	+1 снаряд за уровень	S9 reused
 Missplev3	+1 Missile per %d Levels	+1 снаряд за %d уровня	S9 reused
-Boltplev1	Bolts per Level	стрелы за уровень	S9 reused
-Boltplev2	+1 Bolt per Level	+1 стрела за уровень	S9 reused
-Boltplev3	+1 Bolt per %d Levels	+1 стрела за %d уровня	S9 reused
+Boltplev1	Bolts per Level	Снарядов за уровень	S9 revised
+Boltplev2	+1 Bolt per Level	+1 снаряд за уровень	S9 revised
+Boltplev3	+1 Bolt per %d Levels	+1 снаряд за каждые %d уровня	S9 revised
 Shotplev1	Shots per Level	зарядов за уровень	S9 reused
 Shotplev2	+1 Shot per Level	+1 заряд за уровень	S9 reused
 Shotplev3	+1 Shot per %d Levels	+1 заряд за %d уровня	S9 reused
@@ -2107,7 +2107,7 @@ StrPhysPierce	Physical Pierce: 	Физическое пробитие: 	S9 reuse
 ForceMove	Move Only	Только Перемещение	S9 reused
 ForceMoveShort	Move to target location	Переместиться в целевое местоположение	S9 reused
 ForceMoveLong	Move to target location	Переместиться в целевое местоположение	S9 reused
-StrBolts	Bolts Fired: 	Выпускает зарядов: 	S9 reused
+StrBolts	Bolts Fired: 	Выпущено снарядов: 	S9 revised
 StrLifeHeal	Life Recovered: 	Восстанавливает здоровья: 	S9 reused
 StrHolyFireDmg	Holy Fire: 	Священный огонь: 	S9 reused
 StrFireDamage	Fire Damage: 	Урон от огня: 	S9 reused
@@ -2145,7 +2145,7 @@ BladeDance	Blade Dance	Танец Клинков	S9 reused
 StrEnemyFireRes	Enemy Fire Resistances: 	Сопротивление огню противника: 	S9 reused
 StrEnemyColdRes	Enemy Cold Resistances: 	Сопротивление холоду противника: 	S9 reused
 Convphy2fire	Converts %d%% Physical Damage to Fire Damage	Преобразует %d%% физического урона в урон от огня	S9 reused
-SacrificeLongDesc	plus 5 percent of corpse life as physical damage\nslain monsters explode dealing 125% of overkill damage\na deadly attack at the cost of life	физического и половины магического урона\nплюс 5 процентов здоровья трупа в виде половины\nубитые монстры взрываются, нанося урон смертельная атака ценой здоровья	S9 reused
+SacrificeLongDesc	plus 5 percent of corpse life as physical damage\nslain monsters explode dealing 125% of overkill damage\na deadly attack at the cost of life	Наносит дополнительный физический урон в размере 5% от здоровья трупа\nУбитые монстры взрываются, нанося 125% избыточного урона\nСмертельная атака ценой собственной жизни	S9 revised
 skillsd96_PD2	slain monsters corpses explode on death	Трупы убитых монстров взрываются после их смерти	S14 translated
 ChargeLongDesc	based on distance travelled\ngains increased splash radius\ncharge into battle and attack an enemy	преодаленного расстояния\nудара увеличивается в зависимости от\nврывается в бой атакуя противника, радиус рассекающего	S9 reused
 Deep Wounds	Deep Wounds	Глубокие Раны	S9 reused
@@ -2173,7 +2173,7 @@ HolyNovaLongDesc	that damages enemies or heals allies\nCreates an expanding ring
 Physdplev	Physical Damage per Level	к физическому урону за уровень	S9 reused
 HolyLight	Holy Light	Священный Свет	S9 reused
 HolyLightShortDesc	Heals allies and damages enemies in an area	исцеляет союзника	S9 reused
-HolyLightLongDesc	When cast on an enemy heals for half but deals full damage\nWhen cast on an ally deals half damage but heals for full\nhealing allies and damaging enemies in an area\nCalls down light from the heavens	исцелить союзника\nна расстоянии\nпризывает свет\nс небес, чтобы	S9 reused
+HolyLightLongDesc	When cast on an enemy heals for half but deals full damage\nWhen cast on an ally deals half damage but heals for full\nhealing allies and damaging enemies in an area\nCalls down light from the heavens	При применении на врага исцеляет наполовину, но наносит полный урон\nПри применении на союзника наносит половину урона, но полностью исцеляет\nИсцеляет союзников и наносит урон врагам в области действия\nПризывает свет с небес	S9 revised
 NovaDmgStr	Nova Lightning Damage: 	Урон от молнии у кольца: 	S9 reused
 NovaLtngdplev	Nova Lightning Damage per Level	к урону от молнии у кольца за уровень	S9 reused
 EnemyAtkRateStr	Enemy Attack Rating: 	Уровень атаки противника: 	S9 reused
@@ -2210,7 +2210,7 @@ StrPercIncLeapSpeed	% Increased Leap Speed	% к скорости прыжка	S9
 StrColdPierce	Cold Pierce: 	Пробитие холодом: 	S9 reused
 ColdEnchant	Cold Enchant	Зачарование Холодом	S9 reused
 ColdEnchantShortDesc	enchants melee or ranged weapons with cold	зачаровывает оружие ближнего и дальнего боя уроном от холода	S9 reused
-ColdEnchantLongDesc	half efficiency for all allies\nenchants nearby allies weapons with cold damage	дает половину урона союзникам треть урона от огня оружию дальнего боя\nдобавляя урон от холода оружию ближнего боя и зачаровывает оружие союзника или наемника,	S9 reused
+ColdEnchantLongDesc	half efficiency for all allies\nenchants nearby allies weapons with cold damage	Эффективность для союзников снижена вдвое\nЗачаровывает оружие ближайших союзников уроном от холода	S9 revised
 StrDelay	Delay: 	Задержка: 	S9 reused
 StrReducedDelay	Reduced Delay	Задержка уменьшается	S9 reused
 StrAttackRating	 Attack Rating	 к уровню атаки	S9 reused
@@ -2226,7 +2226,7 @@ CombustionLongDesc	Creates an expanding ring of fire balls to engulf your enemie
 StrFirePierce	Fire Pierce: 	Пробитие огнем: 	S9 reused
 LesserHydra	Lesser Hydra	Малая Гидра	S9 reused
 LesserHydraShortDesc	summons multi-headed fire beast	вызывает многоголовую огненную гидру	S9 reused
-LesserHydraLongDesc	firebolt to reduce your enemies to ashes\nsummons a multi-headed beast of flame that casts	огненные стрелы в ваших противников\nвызывает многоголовую огненную гидру, которая запускает	S9 reused
+LesserHydraLongDesc	firebolt to reduce your enemies to ashes\nsummons a multi-headed beast of flame that casts	огненные снаряды, испепеляющие врагов\nВызывает многоголовую огненную гидру, которая их выпускает	S9 revised
 StrGainDRPassiveBonus	Gain 1% Active Damage Reduction with every 2 Base Level\n	Активно получает 1% снижения\nурона за каждые 2 базовых уровня	S9 reused
 StrPassiveHPRegen	Health Regeneration: 	Регенерация здоровья: 	S9 reused
 StrGainRegenPassiveBonus	Grants +1 Passive Health Regeneration per Base Level	Пассивно дает +1 к регенерации здоровья за базовый уровень	S9 reused
@@ -2370,17 +2370,17 @@ skillan17_PD2	Slow Movement	Замедленные движения	S9 reused
 skillname19_PD2	Javelin and Spear Mastery	Мастерство Владения Копьем и Дротиком	S9 reused
 skillsd19_PD2	passively increases damage and attack speed	пассивно - повышает урон и скорость атаки	S9 reused
 skillld19_PD2	javelin and spear class weapons\nincreases damage and critical hit damage with	при использовании дротика или копья\nпассивно - повышает урон и шанс критического удара	S9 reused
-skillld23_PD2	sharpens your weapons to pierce enemy physical resistances\npassive - increases your attack rating and	пассивно - повышает уровень\nатаки и уменьшает защиту цели	S9 reused
+skillld23_PD2	sharpens your weapons to pierce enemy physical resistances\npassive - increases your attack rating and	Затачивает оружие, позволяя пробивать физическое сопротивление врагов\nПассивно повышает рейтинг атаки и физическое пробивание	S9 revised
 skillld29_PD2	a melee or missile attack when walking or running\npassive - you have a chance to dodge	при ходьбе или беге ударов ближнего или дальнего боя\nпассивно - вероятность уклониться от	S9 reused
 skillld37_PD2	and grants passive attack rating\npassive - increases the rate at which you recover mana	маны и дает уровень атаки\nпассивно - повышает скорость восстановления	S9 reused
 skillxld42_PD2	lowers enemy lightning resistances for a short duration\nof all nearby enemies\ncreates an electrical field that reduces life	снижает сопротивление молнии противника на короткое время\nздоровье у всех ближайших противников на четверть\nсоздает электрическое поле, которое снижает	S9 reused
 skillsd46_PD2	explode and ignite the ground in your wake	создает взрыв и поджигает землю следом за вами	S9 reused
-skillld46_PD2	while affected you cannot be frozen\nleaving a wall of fire in your wake\nexplode and dash towards your enemies	создает стену огня следом за вами\nсоздает взрыв с\nрывком к противнику и	S9 reused
+skillld46_PD2	while affected you cannot be frozen\nleaving a wall of fire in your wake\nexplode and dash towards your enemies	Пока действует эффект, вас нельзя заморозить\nОставляет за собой стену огня\nВзрывается и бросается к врагам	S9 revised
 skillname52_PD2	Enchant Fire	Зачарование Огнем	S9 reused
-skillld52_PD2	half efficiency for all allies\nenchants nearby allies weapons with fire damage	дает половину урона союзникам треть урона от огня оружию дальнего боя\nдобавляя урон от огня оружию ближнего боя и зачаровывает оружие союзника или наемника,	S9 reused
+skillld52_PD2	half efficiency for all allies\nenchants nearby allies weapons with fire damage	Эффективность для союзников снижена вдвое\nЗачаровывает оружие ближайших союзников уроном от огня	S9 revised
 skillan52_PD2	Enchant Fire	Зачарование огнем	S9 reused
 skillsd54_PD2	temporarily reducing damage dealt\ninstantly moves to destination	мгновенно перемещает в указанную\nточку и уменьшает наносимый урон	S9 reused
-skillld54_PD2	reducing the elemental damage you deal for 1 second\ninstantly moves to a destination	вами урон от заклинаний на 1 секунду поле вашего зрения и уменьшает наносимый\nмгновенно перемещает в указанную точку в	S9 reused
+skillld54_PD2	reducing the elemental damage you deal for 1 second\ninstantly moves to a destination	снижая наносимый вами стихийный урон на 1 секунду\nмгновенно перемещает вас в указанное место	S9 revised
 skillld56_PD2	from sources of fire mastery\nmeteor's physical damage benefits \nto crush and incinerate your enemies\nsummons a meteor from the heavens	от мастерства владения огнем\nфизический урон метеора увеличивается\nи испепеляющий противников\nвызывает с небес метеор, сокрушающий	S9 reused
 skillsd60_PD2	retaliates against ranged and melee attackers	отвечает на атаки дальнего и ближнего боя	S9 reused
 skillld60_PD2	damages melee attackers if you are hit\nin retaliation against ranged attackers\nincreases defense and discharges a blizzard spike	наносит урон атакующим вас в ближнем бою при попадании\nв ответ на атаки дальнего боя противников\nповышает защиту и выпускает шип снежной бури	S9 reused
@@ -2419,7 +2419,7 @@ skillld112_PD2	spirals outwards damaging enemies it hits\nsummons an ethereal ha
 skillsd119_PD2	their magic resistances\naura - damages enemies with magic and reduces 	и уменьшает их сопротивление магии\nаура - наносит магический урон по противникам	S9 reused
 skillld119_PD2	damage and reduces enemy magic resistances\nwhen active, aura damages nearby enemies with magic	и уменьшает их сопротивление магии\nбудучи активной, аура наносит магический урон по противникам	S9 reused
 skillsd124_PD2	aura - redeems the dead for mana	аура - искупляет умерших для получения здоровья	S9 reused
-skillxld124_PD2	the souls of slain enemies to give you mana\nwhen active, aura attempts to redeem	восстанавливая здоровье и ману вам и вашей группе\nповерженных противников, тем самым будучи активной, аура пытается искупить души	S9 reused
+skillxld124_PD2	the souls of slain enemies to give you mana\nwhen active, aura attempts to redeem	души поверженных врагов, чтобы восстановить вам ману\nБудучи активной, аура пытается искупить	S9 revised
 skillsd125_PD2	aura - protects against and increases elemental damage	аура - защищает от элементального урона и увеличивает его	S9 reused
 skillld125_PD2	for you and your party\nreceived and increases fire, cold, and lightning damage dealt\nwhen active, aura decreases fire, cold, and lightning damage	холода и молнии, для вас и вашей группы\nхолода и молнии, а также наносимый урон от огня,\nбудучи активной, аура снижает получаемый урон от огня,	S9 reused
 skillld126_PD2	powerful blow that has a chance to knock back enemies	мощный удар, который имеет шанс отбросить противников	S9 reused
@@ -2435,7 +2435,7 @@ skillname135_PD2	Ranged Mastery	Мастерство метательного о
 skillsd135_PD2	passive - improves thrown weapon skill	пассивный навык — повышает мастерство метательного оружия	S14 translated
 skilld135_PD2	passive - improves thrown weapon skill	пассивный навык — повышает мастерство метательного оружия	S14 translated
 skillan135_PD2	Ranged Mastery	Мастерство метательного оружия	S14 translated
-skillld139_PD2	and increasing your attack rating\nshort time dealing bonus damage\nstuns enemies in an area for a	время и повышает ваш уровень атаки\nоглушает противников в\nрадиусе действия на короткое	S9 reused
+skillld139_PD2	and increasing your attack rating\nshort time dealing bonus damage\nstuns enemies in an area for a	и повышает рейтинг атаки\nненадолго нанося дополнительный урон\nоглушает противников в области действия	S9 revised
 skillsd140_PD2	throw two weapons that bounce to nearby enemies	бросок двумя оружиями, которые отскакивают в ближайших противников	S9 reused
 skillld140_PD2	weapons bounce to nearby enemies\nthrowing weapons at the same time\nallows you to throw two different	оружия отскакивают в ближайших противников\nметательных оружия за раз\nпозволяет бросить два разных	S9 reused
 skillname141_PD2	Combat Reflexes	Боевые Рефлексы	S9 reused
