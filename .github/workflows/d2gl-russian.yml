@@ -1,0 +1,25 @@
+name: D2GL Russian HD text
+on:
+  push:
+    branches: [fix/russian-d2gl-hd-text]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: Project-Diablo-2/d2gl
+          ref: 55148de0aec79d487f5bcef1842cfdc3effd2f62
+          path: d2gl-source
+      - uses: microsoft/setup-msbuild@v2
+      - run: python localization/d2gl/apply_translation.py d2gl-source
+      - run: msbuild d2gl-source/d2gl.sln /m /p:Configuration=Release /p:Platform=x86 /p:PlatformToolset=v143 /p:WindowsTargetPlatformVersion=10.0 /p:PreferredToolArchitecture=x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: d2gl-russian-hd
+          path: |
+            d2gl-source/**/Release/glide3x.dll
+            d2gl-source/**/Release/ddraw.dll
+          if-no-files-found: error
