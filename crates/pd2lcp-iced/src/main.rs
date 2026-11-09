@@ -713,6 +713,18 @@ fn update(state: &mut Launcher, message: Message) -> Task<Message> {
                     Navigation::Previous => (state.focus_index + count - 1) % count,
                     _ => (state.focus_index + 1) % count,
                 };
+                if matches!(&state.gui_state, GuiState::Settings)
+                    && (1..=7).contains(&state.focus_index)
+                {
+                    let scroll_fraction = (state.focus_index - 1) as f32 / 6.0;
+                    return iced::widget::operation::snap_to(
+                        "settings-options",
+                        iced::widget::operation::RelativeOffset {
+                            x: Some(0.0),
+                            y: Some(scroll_fraction),
+                        },
+                    );
+                }
             }
             Navigation::Left | Navigation::Right => match state.gui_state {
                 GuiState::Settings if state.focus_index == 1 => {
@@ -1333,19 +1345,7 @@ fn main_screen(state: &Launcher) -> Element<'_, Message> {
 fn settings_screen(state: &Launcher) -> Element<'_, Message> {
     let renderers = [GraphicsMode::DDRAW, GraphicsMode::_3DFX];
 
-    let content = col![
-        row![
-            text("Settings").size(20).color(palette::TEXT).width(Fill),
-            navigation_target(
-                button(text("Back").size(13))
-                    .on_press(Message::ReturnButton)
-                    .padding([10.0, 12.0])
-                    .style(secondary_button_style),
-                state.focus_index == 0,
-            ),
-        ]
-        .align_y(iced::Alignment::Center),
-        Space::new().height(space::XS),
+    let settings_options = col![
         settings_section(
             "Graphics",
             row![
@@ -1421,7 +1421,7 @@ fn settings_screen(state: &Launcher) -> Element<'_, Message> {
                     text(format!("{:.0}%", state.new_settings.scale_factor * 100.0))
                 ]
                 .align_y(iced::Alignment::Center),
-                Space::new().width(space::LG),
+                Space::new().height(space::SM),
                 navigation_target(
                     slider(
                         75.0..=200.0,
@@ -1433,6 +1433,28 @@ fn settings_screen(state: &Launcher) -> Element<'_, Message> {
                 )
             ]
         ),
+    ]
+    .spacing(space::SM)
+    .width(Fill);
+
+    let content = col![
+        row![
+            text("Settings").size(20).color(palette::TEXT).width(Fill),
+            navigation_target(
+                button(text("Back").size(13))
+                    .on_press(Message::ReturnButton)
+                    .padding([10.0, 12.0])
+                    .style(secondary_button_style),
+                state.focus_index == 0,
+            ),
+        ]
+        .align_y(iced::Alignment::Center),
+        Space::new().height(space::XS),
+        scrollable(settings_options)
+            .id("settings-options")
+            .style(scrollable_style)
+            .width(Fill)
+            .height(Fill),
         Space::new().height(space::XS),
         row![
             navigation_target(
@@ -1464,7 +1486,8 @@ fn settings_screen(state: &Launcher) -> Element<'_, Message> {
         ]
     ]
     .spacing(space::SM)
-    .width(Fill);
+    .width(Fill)
+    .height(Fill);
 
     page(content)
 }
