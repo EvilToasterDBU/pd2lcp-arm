@@ -45,6 +45,12 @@ pub enum Error {
     InstallCorrupted,
     #[error("Invalid game file data metadata")]
     InvalidMetadata,
+    #[error("Checksum mismatch for {file}: expected {expected}, got {actual}")]
+    FileChecksumMismatch {
+        file: String,
+        expected: String,
+        actual: String,
+    },
     #[error("Wine initialisation failed")]
     WineInitFailed,
     #[error("No home directory")]

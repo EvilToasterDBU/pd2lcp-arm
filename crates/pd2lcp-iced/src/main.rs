@@ -1882,18 +1882,23 @@ fn main() -> Result<()> {
 
         let rt = tokio::runtime::Runtime::new().expect("Failed to initiate tokio runtime");
 
-        if let Ok(true) = rt.block_on(update_available(Some(state_raw.clone())))
-            && !settings.no_updates
-        {
-            // Update is available (if it errors we just launch, maybe they don't have internet connectivity)
-            update_flag = true;
-        } else {
-            // Otherwise we just launch
+        if settings.no_updates {
             rt.block_on(launch(Some(state_raw), settings))
                 .expect("Failed to launch pd2");
 
             std::process::exit(0);
-        };
+        }
+
+        match rt.block_on(update_available(Some(state_raw.clone()))) {
+            Ok(true) => update_flag = true,
+            Ok(false) => {
+                rt.block_on(launch(Some(state_raw), settings))
+                    .expect("Failed to launch pd2");
+
+                std::process::exit(0);
+            }
+            Err(error) => panic!("Failed to check for PD2 updates: {error}"),
+        }
     }
 
     iced::application(

@@ -1,12 +1,12 @@
 use tokio::{
-    fs::{File, OpenOptions},
-    io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt},
+    fs::File,
+    io::{AsyncReadExt, AsyncWriteExt},
 };
 
 use crate::{
     error::{Error, ResultContextExt},
     event::{Event, EventNotify},
-    metadata::{GameFileMetadata, get_metadata},
+    metadata::{GameFilesMetadataRaw, get_metadata, parse_local_metadata},
     state::State,
     utils::compute_hash,
 };
@@ -33,8 +33,8 @@ pub async fn update_available(state: Option<State>) -> Result<bool, Error> {
         .await
         .context("Failed to read local metadata")?;
 
-    let local_metadata: Vec<GameFileMetadata> =
-        serde_json::from_slice(&buffer).context("Failed to deserialise local metadata")?;
+    let local_metadata =
+        parse_local_metadata(&buffer).context("Failed to deserialise local metadata")?;
 
     if local_metadata != remote_metadata {
         return Ok(true);
@@ -68,52 +68,50 @@ pub async fn install_pd2(state: Option<State>, notify: EventNotify) -> Result<()
 
         let output_file_path = pd2_files.join(&file_metadata.name);
 
-        if !output_file_path.exists() {
+        let needs_update = match tokio::fs::read(&output_file_path).await {
+            Ok(data) => compute_hash(&data)? != file_metadata.checksum,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => true,
+            Err(error) => return Err(error.into()),
+        };
+
+        if needs_update {
             let data = reqwest::get(&file_metadata.url)
                 .await
                 .context("Failed to download pd2 file")?
+                .error_for_status()
+                .context("PD2 file server returned an error status")?
                 .bytes()
                 .await?;
 
-            let mut output_file = File::create(&output_file_path)
-                .await
-                .context("Failed to create pd2 file")?;
+            let actual_hash = compute_hash(&data)?;
+            if actual_hash != file_metadata.checksum {
+                return Err(Error::FileChecksumMismatch {
+                    file: file_metadata.name.clone(),
+                    expected: file_metadata.checksum.clone(),
+                    actual: actual_hash,
+                });
+            }
 
-            output_file
+            let file_name = output_file_path
+                .file_name()
+                .expect("PD2 update paths always have a file name")
+                .to_string_lossy();
+            let temporary_file_path =
+                output_file_path.with_file_name(format!("{file_name}.pd2lcp-update.tmp"));
+            let mut temporary_file = File::create(&temporary_file_path)
+                .await
+                .context("Failed to create temporary PD2 file")?;
+            temporary_file
                 .write_all(&data)
                 .await
-                .context("Failed to write pd2 file")?;
+                .context("Failed to write temporary PD2 file")?;
+            temporary_file.flush().await?;
+            drop(temporary_file);
 
-            continue;
-        }
-
-        let mut output_file = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .open(&output_file_path)
-            .await?;
-
-        let mut buffer = Vec::new();
-
-        output_file.read_to_end(&mut buffer).await?;
-
-        let local_hash = compute_hash(&buffer)?;
-
-        if file_metadata.checksum != local_hash {
-            let data = reqwest::get(&file_metadata.url)
-                .await
-                .context("Failed to download pd2 file")?
-                .bytes()
-                .await?;
-
-            // We seek to 0 and write everything
-            output_file.seek(std::io::SeekFrom::Start(0)).await?;
-            output_file.set_len(0).await?;
-
-            output_file
-                .write_all(&data)
-                .await
-                .context("Failed to write pd2 file")?;
+            if output_file_path.exists() {
+                tokio::fs::remove_file(&output_file_path).await?;
+            }
+            tokio::fs::rename(&temporary_file_path, &output_file_path).await?;
         }
     }
 
@@ -124,8 +122,9 @@ pub async fn install_pd2(state: Option<State>, notify: EventNotify) -> Result<()
         .await
         .context("Failed to create local metadata file")?;
 
+    let metadata_raw = GameFilesMetadataRaw::from(metadata_game_files.as_slice());
     let serialised =
-        serde_json::to_vec_pretty(&metadata_game_files).context("Failed to serialise metadata")?;
+        serde_json::to_vec_pretty(&metadata_raw).context("Failed to serialise metadata")?;
 
     local_metadata_file
         .write_all(&serialised)
