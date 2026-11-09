@@ -16,7 +16,7 @@ exits, there will also be a second proper installer, and only after you've gone 
 
 ### Linux
 Installation on Linux is fairly simple.
-On ARM64, the AppImage includes Box64 and uses a Wine WoW64 build so it can launch both 32-bit and 64-bit Windows installers without system-wide emulator setup.
+The x86_64 AppImage uses native x86_64 Wine. On ARM64, the AppImage includes Box64 and uses a Wine WoW64 build so it can launch both 32-bit and 64-bit Windows installers without system-wide emulator setup.
 #### Prerequisites
   - Official D2 and D2 LOD installers from battle.net
   - Valid CD keys
@@ -57,3 +57,8 @@ Android is a bit more involved, since you're in an externally managed Wine envir
 - **Touchscreen:** buttons, checkboxes, renderer selection, and the UI scale slider accept touch input.
 - **Gamepad:** D-pad or left stick moves the focus; South (A/Cross) or Start activates; East (B/Circle) or Select goes back.
 - **Keyboard:** arrow keys move the focus, Enter or Space activates, Escape goes back, and Tab moves through controls.
+
+## Russian localization
+Download `pd2-russian-s14-hd.zip` from the [latest release](https://github.com/EvilToasterDBU/pd2lcp-arm/releases/latest), close the game, and extract the archive into the `ProjectD2` game folder. The archive contains the Russian S14 strings and the D2GL files required for Russian HD menu labels. Back up any existing `glide3x.dll`, `ddraw.dll`, and `data/local` files before replacing them.
+
+Then enable **Russian language** in the launcher's settings. The launcher adds `-direct` when starting the game. This pack works with both the x86_64 build, which runs native Wine without Box64, and the ARM64 build, which uses Box64.

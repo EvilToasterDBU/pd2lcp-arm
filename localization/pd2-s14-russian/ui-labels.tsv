@@ -1,0 +1,24 @@
+file	english	russian	screenshots	canvas_width	align
+GeneralOpt.dc6	GENERAL	ОБЩИЕ	20261109114811_1.jpg; 20261109114817_1.jpg
+PD2Controls.dc6	CONTROLS	УПРАВЛЕНИЕ	20261109114811_1.jpg; 20261109114817_1.jpg
+LootFilter.dc6	LOOT FILTER	ФИЛЬТР ДОБЫЧИ	20261109114811_1.jpg; 20261109114817_1.jpg
+AuraOptions.dc6	AURAS	АУРЫ	20261109114811_1.jpg; 20261109114817_1.jpg
+PD2Hotkeys.dc6	CONFIGURE HOTKEYS	НАСТРОЙКА КЛАВИШ	20261109114811_1.jpg
+PD2Options.dc6	PD2 OPTIONS	ОПЦИИ PD2	20261109114811_1.jpg
+QuestsVolume.dc6	QUESTS	ЗАДАНИЯ	20261109115035_1.jpg
+AmbientVolume.dc6	AMBIENT	АМБИЕНТ	20261109115035_1.jpg; 20261109115046_1.jpg
+MenuMusic.dc6	MENU MUSIC	МУЗЫКА МЕНЮ	20261109115035_1.jpg; 20261109115046_1.jpg
+ItemsVolume.dc6	ITEMS	ВЕЩИ	20261109115035_1.jpg
+UiVolume.dc6	UI	ИНТЕРФЕЙС	20261109160546_1.jpg	145	left
+ItemDropVolume.dc6	LOOT FILTER	ФИЛЬТР ДОБЫЧИ	20261109160546_1.jpg
+MonstersVolume.dc6	MONSTERS	МОНСТРЫ	20261109115035_1.jpg
+SkillsVolume.dc6	SKILLS	УМЕНИЯ	20261109115035_1.jpg
+CombatVolume.dc6	COMBAT	БОЙ	20261109115035_1.jpg
+ObjectsVolume.dc6	OBJECTS	ОБЪЕКТЫ	20261109115035_1.jpg
+VoiceVolume.dc6	VOICES	ГОЛОСА	20261109115035_1.jpg
+AutoMapType.dc6	AUTOMAP TYPE	ТИП АВТОКАРТЫ	20261109115055_1.jpg
+MapD2GL.dc6	D2GL MINI	D2GL МИНИ	20261109115055_1.jpg
+MapClassic.dc6	CLASSIC	КЛАССИКА	20261109115055_1.jpg
+HideGamePassword.dc6	HIDE GAME PASSWORD	СКРЫТЬ ПАРОЛЬ ИГРЫ	20261109115055_1.jpg
+ScreenShake.dc6	SCREEN SHAKE	ТРЯСКА ЭКРАНА	20261109115106_1.jpg
+TranslucentParty.dc6	TRANSLUCENT PARTY	ПРОЗРАЧНАЯ ГРУППА	20261109115106_1.jpg

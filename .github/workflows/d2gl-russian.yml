@@ -1,7 +1,7 @@
 name: D2GL Russian HD text
 on:
   push:
-    branches: [fix/russian-d2gl-hd-text]
+    branches: [main, fix/russian-d2gl-hd-text]
   workflow_dispatch:
 jobs:
   build:
