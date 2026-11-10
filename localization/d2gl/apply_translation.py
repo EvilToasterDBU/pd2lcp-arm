@@ -9,7 +9,6 @@ assert len(rows)>70
 missing=set(rows)-tr.keys()
 assert not missing,missing
 translated=re.sub(r'L"([^"]+)"',lambda m:'L"'+tr[m[1]]+'"',mod)
-translated=translated.replace('{ 138, 26 }', '{ 249, 26 }').replace('{ 171, 26 }', '{ 250, 26 }')
 a=s.index('{ LANG_RUS, {',s.index('g_options_text_others'))
 b=s.index('\n\t} },\n};',a)
 s=s[:b]+'\n\t\t// PD2 S14: use the native HD text renderer, retaining original DC6 signatures.\n'+translated+s[b:]
